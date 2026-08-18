@@ -31,8 +31,9 @@ class Config:
 
     # Object detection
     YOLO_MODEL = os.environ.get("YOLO_MODEL", "yolov8n.pt")
-    # If the real detector cannot be loaded, return demo detections so the UI can be exercised.
-    DETECT_DEMO_FALLBACK = os.environ.get("DETECT_DEMO_FALLBACK", "1") == "1"
+    # If the real detector cannot find anything, return demo detections only when explicitly enabled.
+    # The default is false so users see an honest "not classified" message instead of a fake label.
+    DETECT_DEMO_FALLBACK = os.environ.get("DETECT_DEMO_FALLBACK", "0") == "1"
 
     MIN_DECK_SIZE = int(os.environ.get("MIN_DECK_SIZE", "3"))
     VIDEO_QUIZ_LENGTH = int(os.environ.get("VIDEO_QUIZ_LENGTH", "3"))
