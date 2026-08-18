@@ -8,8 +8,8 @@ VIDEOS = [
         "id": "v-letters",
         "title": "Alfabet ASL",
         "type": "letters",
-        "url": "/mock/letters.mp4",
-        "captionsUrl": "/mock/letters.id.vtt",
+        "url": "https://youtu.be/6byePgEZT2s",
+        "captionsUrl": "",
     },
     {
         "id": "v-numbers",
