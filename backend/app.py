@@ -1,4 +1,4 @@
-from flask import Flask
+from flask import Flask, jsonify
 from flask_cors import CORS
 from flask_socketio import SocketIO
 
@@ -20,6 +20,19 @@ def create_app(test_config: dict | None = None) -> Flask:
         app.config.update(test_config)
     CORS(app, supports_credentials=True)
     db.init_app(app)
+
+    @app.route("/")
+    @app.route("/health")
+    def index():
+        return jsonify(
+            {
+                "service": "Smartclusive backend",
+                "status": "ok",
+                "api": "/api",
+                "socketio": "/socket.io",
+            }
+        )
+
     app.register_blueprint(api_bp, url_prefix="/api")
     return app
 
