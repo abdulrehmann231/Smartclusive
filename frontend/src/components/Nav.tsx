@@ -51,10 +51,12 @@ export function Nav() {
           </nav>
         )}
 
-        <div className="row" style={{ gap: 12 }}>
+        <div className="nav__right">
           {student ? (
             <>
-              <span className="pill pill--accent">👤 {student.name}</span>
+              <span className="pill pill--accent nav__user" title={student.name}>
+                👤 {student.name}
+              </span>
               <button
                 className="btn btn--ghost btn--sm"
                 style={{ color: '#fff', borderColor: 'rgba(255,255,255,.5)' }}

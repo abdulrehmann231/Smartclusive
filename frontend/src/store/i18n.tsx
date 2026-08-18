@@ -164,8 +164,16 @@ const DICT: Dict = {
   'cam.allow': { id: 'Izinkan Kamera', en: 'Allow Camera' },
   'cam.requesting': { id: 'Meminta izin…', en: 'Requesting permission…' },
   'cam.denied': {
-    id: 'Akses kamera ditolak. Verifikasi isyarat membutuhkan kamera untuk berfungsi.',
-    en: 'Camera access denied. Sign verification needs the camera to work.',
+    id: 'Akses kamera ditolak. Aktifkan izin kamera di browser untuk melihat pratinjau.',
+    en: 'Camera access denied. Enable the camera permission in your browser to see the preview.',
+  },
+  'cam.unavailable': {
+    id: 'Kamera tidak tersedia di perangkat ini.',
+    en: 'No camera is available on this device.',
+  },
+  'cam.hint': {
+    id: 'Tenang — kamu tetap bisa lanjut, pengenalan tanda disimulasikan.',
+    en: "No worries — you can still continue; sign recognition is simulated.",
   },
   'cam.sampleObject': { id: 'contoh objek', en: 'sample object' },
 
