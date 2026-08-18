@@ -2,6 +2,7 @@ import { NavLink, useNavigate } from 'react-router-dom'
 import { useAuth } from '../store/auth'
 import { useI18n } from '../store/i18n'
 import { LangSwitcher } from './LangSwitcher'
+import { Mascot } from './Mascot'
 
 const LINKS = [
   { to: '/', key: 'nav.home', end: true },
@@ -26,9 +27,11 @@ export function Nav() {
     <header className="nav">
       <div className="nav__inner">
         <NavLink to="/" className="brand">
-          <span className="brand__logo">S</span>
+          <span className="brand__logo brand__logo--mascot">
+            <Mascot size={40} wave={false} />
+          </span>
           <span>
-            <div className="brand__name">SMART CLUSIVE</div>
+            <div className="brand__name">Smart Clusive</div>
             <div className="brand__tag">{t('nav.tag')}</div>
           </span>
         </NavLink>

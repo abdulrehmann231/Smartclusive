@@ -1,7 +1,9 @@
 import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom'
-import { AuthProvider, RequireAuth } from './store/auth'
+import { AuthProvider, RequireAuth, useAuth } from './store/auth'
 import { I18nProvider, useI18n } from './store/i18n'
+import { FontMode } from './components/FontMode'
 import { Nav } from './components/Nav'
+import { Landing } from './pages/Landing'
 import { Login, Register } from './pages/Auth'
 import { Dashboard } from './pages/Dashboard'
 import { Cards } from './pages/Cards'
@@ -29,16 +31,24 @@ function Shell({ children }: { children: React.ReactNode }) {
 
 const guard = (el: React.ReactNode) => <RequireAuth>{el}</RequireAuth>
 
+// Home: Brilliant-style landing when logged out, the gamified dashboard when in.
+function Home() {
+  const { student, loading } = useAuth()
+  if (loading) return <div className="state"><div className="spinner" />…</div>
+  return student ? <Dashboard /> : <Landing />
+}
+
 export default function App() {
   return (
     <BrowserRouter>
       <I18nProvider>
       <AuthProvider>
+        <FontMode />
         <Shell>
           <Routes>
             <Route path="/login" element={<Login />} />
             <Route path="/register" element={<Register />} />
-            <Route path="/" element={guard(<Dashboard />)} />
+            <Route path="/" element={<Home />} />
             <Route path="/learn/cards" element={guard(<Cards />)} />
             <Route path="/learn/capture" element={guard(<Capture />)} />
             <Route path="/quiz" element={guard(<Quiz />)} />

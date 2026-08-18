@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '../store/auth'
 import { useI18n } from '../store/i18n'
 import { Alert } from '../components/StateViews'
+import { Mascot } from '../components/Mascot'
 
 function validEmail(v: string) {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v)
@@ -50,9 +51,9 @@ function AuthForm({ mode }: { mode: 'login' | 'register' }) {
 
   return (
     <div className="page page--narrow">
-      <div className="center" style={{ marginBottom: 18 }}>
-        <div className="brand__logo" style={{ margin: '0 auto 10px', width: 56, height: 56, fontSize: 26 }}>
-          S
+      <div className="center anim-up" style={{ marginBottom: 18 }}>
+        <div style={{ marginBottom: 6 }}>
+          <Mascot size={92} float wave />
         </div>
         <h1 style={{ marginBottom: 4 }}>{isRegister ? t('auth.register') : t('auth.signin')}</h1>
         <p className="muted">{t('auth.subtitle')}</p>

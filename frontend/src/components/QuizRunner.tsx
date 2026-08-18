@@ -3,6 +3,7 @@ import type { QuizItem } from '../api/types'
 import { api } from '../api/client'
 import { SignPad } from './SignPad'
 import { Alert } from './StateViews'
+import { Confetti } from './Confetti'
 import { useI18n } from '../store/i18n'
 
 interface Props {
@@ -37,7 +38,8 @@ export function QuizRunner({ quizId, items, onExit }: Props) {
   if (summary) {
     const pct = Math.round((summary.correct / summary.total) * 100)
     return (
-      <div className="center">
+      <div className="center anim-pop" style={{ position: 'relative' }}>
+        {pct >= 60 && <Confetti />}
         <div className="state__icon">{pct >= 60 ? '🏆' : '💪'}</div>
         <h2>{t('qr.score', { a: summary.correct, b: summary.total })}</h2>
         <p className="muted">{t('qr.summary', { c: summary.correct, i: summary.incorrect, p: pct })}</p>

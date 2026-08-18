@@ -5,6 +5,7 @@ import { useI18n } from '../store/i18n'
 import { Loading, ErrorState, Alert } from '../components/StateViews'
 import { FingerspellReference } from '../components/FingerspellReference'
 import { SignPad } from '../components/SignPad'
+import { Confetti } from '../components/Confetti'
 
 type Step = 'guess' | 'fingerspell' | 'done'
 
@@ -114,7 +115,8 @@ export function Cards() {
           )}
 
           {step === 'done' && (
-            <div className="center">
+            <div className="center anim-pop" style={{ position: 'relative' }}>
+              <Confetti />
               <div className="state__icon">🎉</div>
               <Alert kind="success">{deckMsg}</Alert>
               <button className="btn btn--primary mt" onClick={loadCard}>{t('cards.nextCard')}</button>

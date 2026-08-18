@@ -200,6 +200,44 @@ const DICT: Dict = {
   // Footer
   'footer.copy': { id: '© 2026 Smart Clusive · Belajar Bahasa Inggris melalui ASL', en: '© 2026 Smart Clusive · Learn English through ASL' },
   'footer.tag': { id: 'Membuka akses ke dunia Tuli 🤟', en: 'Opening access to the Deaf world 🤟' },
+
+  // Landing (public, pre-login)
+  'land.badge': { id: '✋ Belajar sambil bermain', en: '✋ Learn while you play' },
+  'land.title1': { id: 'Belajar Bahasa Inggris', en: 'Learn English' },
+  'land.title2': { id: 'lewat American Sign Language', en: 'through American Sign Language' },
+  'land.lead': {
+    id: 'Kenali kata, isyaratkan sendiri di depan kamera, dan kumpulkan kata baru — seru seperti bermain game.',
+    en: 'Recognize words, sign them yourself on camera, and collect new words — as fun as playing a game.',
+  },
+  'land.learner': { id: 'Aku Pelajar', en: "I'm a Learner" },
+  'land.haveAccount': { id: 'Sudah punya akun? Masuk', en: 'Already have an account? Sign in' },
+  'land.chip1': { id: '🔤 Alfabet ASL', en: '🔤 ASL Alphabet' },
+  'land.chip2': { id: '🔢 Angka ASL', en: '🔢 ASL Numbers' },
+  'land.chip3': { id: '🎯 Kuis seru', en: '🎯 Fun quizzes' },
+  'land.chip4': { id: '📷 Belajar dari kamera', en: '📷 Learn from camera' },
+  'land.signHi': { id: 'Halo!', en: 'Hi!' },
+
+  // Gamified dashboard
+  'dash.level': { id: 'Level {n}', en: 'Level {n}' },
+  'dash.xp': { id: '{xp} XP', en: '{xp} XP' },
+  'dash.streak': { id: 'Runtunan', en: 'Streak' },
+  'dash.streakDays': { id: '{n} hari', en: '{n} days' },
+  'dash.gems': { id: 'Permata', en: 'Gems' },
+  'dash.continue': { id: 'Lanjutkan', en: 'Continue' },
+  'dash.journey': { id: 'Perjalanan Belajarmu', en: 'Your Learning Journey' },
+  'dash.warmup': { id: 'Pemanasan', en: 'Warm Up' },
+  'dash.warmupMeta': { id: 'Kenali kata pertamamu', en: 'Recognize your first words' },
+  'dash.nodeCardsMeta': { id: 'Tebak & isyaratkan kata', en: 'Guess & sign words' },
+  'dash.nodeCaptureMeta': { id: 'Foto objek nyata', en: 'Photograph real objects' },
+  'dash.nodeVideoMeta': { id: 'Tonton pelajaran ASL', en: 'Watch ASL lessons' },
+  'dash.nodeQuizMeta': { id: 'Uji kemampuanmu', en: 'Test your skills' },
+  'dash.locked': { id: 'Terkunci', en: 'Locked' },
+  'dash.done': { id: 'Selesai', en: 'Done' },
+  'dash.weekMon': { id: 'S', en: 'M' },
+  'dash.weekTue': { id: 'S', en: 'T' },
+  'dash.weekWed': { id: 'R', en: 'W' },
+  'dash.weekThu': { id: 'K', en: 'T' },
+  'dash.weekFri': { id: 'J', en: 'F' },
 }
 
 interface I18nState {
