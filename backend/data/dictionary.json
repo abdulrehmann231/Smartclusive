@@ -1,0 +1,72 @@
+[
+  {
+    "indonesian": "kucing",
+    "english": "cat",
+    "emoji": "🐱",
+    "hue": 30,
+    "distractors": ["dog", "cow", "bag"]
+  },
+  {
+    "indonesian": "anjing",
+    "english": "dog",
+    "emoji": "🐶",
+    "hue": 20,
+    "distractors": ["cat", "cow", "apple"]
+  },
+  {
+    "indonesian": "sapi",
+    "english": "cow",
+    "emoji": "🐮",
+    "hue": 90,
+    "distractors": ["cat", "dog", "apple"]
+  },
+  {
+    "indonesian": "mobil",
+    "english": "car",
+    "emoji": "🚗",
+    "hue": 210,
+    "distractors": ["book", "bag", "clock"]
+  },
+  {
+    "indonesian": "buku",
+    "english": "book",
+    "emoji": "📘",
+    "hue": 260,
+    "distractors": ["pencil", "desk", "bag"]
+  },
+  {
+    "indonesian": "pensil",
+    "english": "pencil",
+    "emoji": "✏️",
+    "hue": 45,
+    "distractors": ["book", "desk", "clock"]
+  },
+  {
+    "indonesian": "meja",
+    "english": "desk",
+    "emoji": "🪑",
+    "hue": 25,
+    "distractors": ["book", "bag", "clock"]
+  },
+  {
+    "indonesian": "tas",
+    "english": "bag",
+    "emoji": "🎒",
+    "hue": 340,
+    "distractors": ["book", "pencil", "clock"]
+  },
+  {
+    "indonesian": "jam",
+    "english": "clock",
+    "emoji": "⏰",
+    "hue": 0,
+    "distractors": ["book", "car", "apple"]
+  },
+  {
+    "indonesian": "apel",
+    "english": "apple",
+    "emoji": "🍎",
+    "hue": 5,
+    "distractors": ["cat", "dog", "cow"]
+  }
+]
