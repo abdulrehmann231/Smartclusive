@@ -37,6 +37,9 @@ async function request<T>(
   const url = `${API_BASE}${path}`
   const headers: Record<string, string> = {
     Authorization: `Bearer ${token()}`,
+    // Skip ngrok's free-tier browser-warning interstitial, which is returned
+    // without CORS headers and otherwise surfaces as a "CORS error" in the browser.
+    'ngrok-skip-browser-warning': 'true',
   }
   let fetchBody: BodyInit | undefined
 
