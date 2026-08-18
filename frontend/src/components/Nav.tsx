@@ -1,17 +1,20 @@
 import { NavLink, useNavigate } from 'react-router-dom'
 import { useAuth } from '../store/auth'
+import { useI18n } from '../store/i18n'
+import { LangSwitcher } from './LangSwitcher'
 
 const LINKS = [
-  { to: '/', label: 'Beranda', end: true },
-  { to: '/learn/cards', label: 'Kartu Kata' },
-  { to: '/learn/capture', label: 'Kamera' },
-  { to: '/quiz', label: 'Kuis' },
-  { to: '/videos', label: 'Video' },
-  { to: '/deck', label: 'Koleksi' },
+  { to: '/', key: 'nav.home', end: true },
+  { to: '/learn/cards', key: 'nav.cards' },
+  { to: '/learn/capture', key: 'nav.camera' },
+  { to: '/quiz', key: 'nav.quiz' },
+  { to: '/videos', key: 'nav.videos' },
+  { to: '/deck', key: 'nav.deck' },
 ]
 
 export function Nav() {
   const { student, logout } = useAuth()
+  const { t } = useI18n()
   const navigate = useNavigate()
 
   async function onLogout() {
@@ -25,8 +28,8 @@ export function Nav() {
         <NavLink to="/" className="brand">
           <span className="brand__logo">S</span>
           <span>
-            <div className="brand__name">SMARTCLUSIVE</div>
-            <div className="brand__tag">Belajar Bahasa Isyarat ASL</div>
+            <div className="brand__name">SMART CLUSIVE</div>
+            <div className="brand__tag">{t('nav.tag')}</div>
           </span>
         </NavLink>
 
@@ -39,24 +42,32 @@ export function Nav() {
                 end={l.end}
                 className={({ isActive }) => 'nav__link' + (isActive ? ' active' : '')}
               >
-                {l.label}
+                {t(l.key)}
               </NavLink>
             ))}
           </nav>
         )}
 
-        {student ? (
-          <div className="row">
-            <span className="pill pill--accent">👤 {student.name}</span>
-            <button className="btn btn--ghost btn--sm" style={{ color: '#fff', borderColor: 'rgba(255,255,255,.5)' }} onClick={onLogout}>
-              Keluar
-            </button>
-          </div>
-        ) : (
-          <NavLink to="/login" className="nav__link">
-            Masuk
-          </NavLink>
-        )}
+        <div className="row" style={{ gap: 12 }}>
+          {student ? (
+            <>
+              <span className="pill pill--accent">👤 {student.name}</span>
+              <button
+                className="btn btn--ghost btn--sm"
+                style={{ color: '#fff', borderColor: 'rgba(255,255,255,.5)' }}
+                onClick={onLogout}
+              >
+                {t('nav.signout')}
+              </button>
+            </>
+          ) : (
+            <NavLink to="/login" className="nav__link">
+              {t('nav.signin')}
+            </NavLink>
+          )}
+          {/* Translation feature: Indonesian / English toggle, top-right of the nav */}
+          <LangSwitcher />
+        </div>
       </div>
     </header>
   )

@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import type { Video } from '../api/types'
 import { api } from '../api/client'
+import { useI18n } from '../store/i18n'
 
 interface Props {
   video: Video
@@ -11,6 +12,7 @@ interface Props {
 // playback with a progress bar and cycling Indonesian captions (toggleable).
 // "Ended" fires only on watch-to-end (learning-videos completion rule).
 export function VideoPlayer({ video, onEnded }: Props) {
+  const { t } = useI18n()
   const [playing, setPlaying] = useState(false)
   const [progress, setProgress] = useState(0)
   const [captionsOn, setCaptionsOn] = useState(true)
@@ -63,11 +65,11 @@ export function VideoPlayer({ video, onEnded }: Props) {
       <div className="row row--between mt">
         <label className="row" style={{ gap: 6, cursor: 'pointer' }}>
           <input type="checkbox" checked={captionsOn} onChange={(e) => setCaptionsOn(e.target.checked)} />
-          Teks Indonesia
+          {t('vid.captions')}
         </label>
         {progress > 0 && progress < 100 && (
           <button className="btn btn--ghost btn--sm" onClick={() => setPlaying((p) => !p)}>
-            {playing ? 'Jeda' : 'Lanjut'}
+            {playing ? t('vid.pause') : t('vid.resume')}
           </button>
         )}
       </div>

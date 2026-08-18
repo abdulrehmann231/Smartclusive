@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from 'react'
 import { api } from '../api/client'
 import type { Card, Fingerspelling } from '../api/types'
+import { useI18n } from '../store/i18n'
 import { Loading, ErrorState, Alert } from '../components/StateViews'
 import { FingerspellReference } from '../components/FingerspellReference'
 import { SignPad } from '../components/SignPad'
@@ -8,6 +9,7 @@ import { SignPad } from '../components/SignPad'
 type Step = 'guess' | 'fingerspell' | 'done'
 
 export function Cards() {
+  const { t } = useI18n()
   const [card, setCard] = useState<Card | null>(null)
   const [error, setError] = useState('')
   const [revealed, setRevealed] = useState<Record<string, string>>({}) // optionId -> image
@@ -26,7 +28,8 @@ export function Cards() {
     setFs(null)
     setStep('guess')
     setDeckMsg('')
-    api.nextCard().then(setCard).catch(() => setError('Gagal memuat kartu.'))
+    api.nextCard().then(setCard).catch(() => setError(t('cards.errLoad')))
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   useEffect(loadCard, [loadCard])
@@ -48,15 +51,15 @@ export function Cards() {
     if (!card || !correctId) return
     const opt = card.options.find((o) => o.id === correctId)!
     const res = await api.addToDeck({ indonesian: card.indonesian, english: opt.english, image: opt.image })
-    setDeckMsg(res.duplicate ? 'Kata ini sudah ada di koleksimu.' : `“${opt.english}” ditambahkan ke koleksi!`)
+    setDeckMsg(res.duplicate ? t('cards.duplicate') : t('cards.addedDeck', { word: opt.english }))
     setStep('done')
   }
 
   return (
     <div className="page page--narrow">
       <div className="page-head">
-        <div className="eyebrow">Fitur 1 · Kartu Kata</div>
-        <h1>Tebak &amp; Isyaratkan</h1>
+        <div className="eyebrow">{t('cards.eyebrow')}</div>
+        <h1>{t('cards.title')}</h1>
       </div>
 
       {error ? (
@@ -66,13 +69,13 @@ export function Cards() {
       ) : (
         <div className="card card--pad-lg">
           <div className="center">
-            <div className="card__sub">Apa arti kata Indonesia ini?</div>
+            <div className="card__sub">{t('cards.prompt')}</div>
             <h2 style={{ fontSize: 34, textTransform: 'capitalize', margin: '6px 0 18px' }}>{card.indonesian}</h2>
           </div>
 
           {step === 'guess' && (
             <>
-              {wrongIds.size > 0 && <Alert kind="info">Coba lagi — pilih opsi lain.</Alert>}
+              {wrongIds.size > 0 && <Alert kind="info">{t('cards.tryAgain')}</Alert>}
               <div className="options">
                 {card.options.map((o) => {
                   const img = revealed[o.id]
@@ -102,7 +105,7 @@ export function Cards() {
 
           {step === 'fingerspell' && fs && (
             <>
-              <Alert kind="success">Benar! Sekarang isyaratkan katanya.</Alert>
+              <Alert kind="success">{t('cards.correct')}</Alert>
               <div className="stack">
                 <FingerspellReference fs={fs} />
                 <SignPad target={fs.word} kind="word" onComplete={onSigned} />
@@ -114,7 +117,7 @@ export function Cards() {
             <div className="center">
               <div className="state__icon">🎉</div>
               <Alert kind="success">{deckMsg}</Alert>
-              <button className="btn btn--primary mt" onClick={loadCard}>Kartu Berikutnya</button>
+              <button className="btn btn--primary mt" onClick={loadCard}>{t('cards.nextCard')}</button>
             </div>
           )}
         </div>

@@ -96,6 +96,34 @@ h1, h2, h3 { line-height: 1.15; margin: 0 0 0.4em; }
 
 .nav__spacer { flex: 1; }
 
+/* ---------------- Language switcher ---------------- */
+.lang { position: relative; }
+.lang__btn {
+  display: inline-flex; align-items: center; gap: 8px;
+  background: #fff; color: var(--ink); cursor: pointer;
+  border: 2px solid rgba(255, 255, 255, 0.6); border-radius: 999px;
+  padding: 7px 12px; font-family: var(--font); font-weight: 800; font-size: 14px;
+  box-shadow: var(--shadow-sm);
+}
+.lang__btn:hover { border-color: var(--accent); }
+.lang__flag { font-size: 16px; line-height: 1; }
+.lang__code { letter-spacing: .5px; }
+.lang__caret { font-size: 11px; color: var(--muted); transition: transform .15s; }
+.lang__caret.open { transform: rotate(180deg); }
+.lang__menu {
+  position: absolute; right: 0; top: calc(100% + 8px); z-index: 30;
+  list-style: none; margin: 0; padding: 6px; min-width: 168px;
+  background: #fff; border: 1px solid var(--line); border-radius: 12px; box-shadow: var(--shadow);
+}
+.lang__item {
+  width: 100%; display: flex; align-items: center; gap: 10px;
+  background: transparent; border: none; cursor: pointer; text-align: left;
+  padding: 10px 12px; border-radius: 9px; font-family: var(--font); font-size: 14px; font-weight: 700; color: var(--ink);
+}
+.lang__item:hover { background: var(--brand-050); }
+.lang__item.active { color: var(--brand-700); }
+.lang__check { margin-left: auto; color: var(--brand); font-weight: 900; }
+
 /* ---------------- Layout ---------------- */
 .page { max-width: 1120px; margin: 0 auto; padding: 28px 22px 60px; width: 100%; }
 .page--narrow { max-width: 460px; }

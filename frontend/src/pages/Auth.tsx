@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '../store/auth'
+import { useI18n } from '../store/i18n'
 import { Alert } from '../components/StateViews'
 
 function validEmail(v: string) {
@@ -9,6 +10,7 @@ function validEmail(v: string) {
 
 function AuthForm({ mode }: { mode: 'login' | 'register' }) {
   const { login, register } = useAuth()
+  const { t } = useI18n()
   const navigate = useNavigate()
   const isRegister = mode === 'register'
 
@@ -21,9 +23,9 @@ function AuthForm({ mode }: { mode: 'login' | 'register' }) {
 
   function validate() {
     const e: typeof errors = {}
-    if (isRegister && name.trim().length < 2) e.name = 'Nama minimal 2 karakter.'
-    if (!validEmail(email)) e.email = 'Format email tidak valid.'
-    if (!password) e.password = 'Kata sandi wajib diisi.'
+    if (isRegister && name.trim().length < 2) e.name = t('auth.errName')
+    if (!validEmail(email)) e.email = t('auth.errEmail')
+    if (!password) e.password = t('auth.errPassword')
     setErrors(e)
     return Object.keys(e).length === 0
   }
@@ -38,9 +40,9 @@ function AuthForm({ mode }: { mode: 'login' | 'register' }) {
       else await login(email, password)
       navigate('/', { replace: true })
     } catch (err: any) {
-      if (err?.error === 'email_taken') setFormError('Email sudah terdaftar. Silakan masuk.')
-      else if (err?.error === 'invalid_credentials') setFormError('Email atau kata sandi salah.')
-      else setFormError('Gagal memproses. Coba lagi.')
+      if (err?.error === 'email_taken') setFormError(t('auth.errTaken'))
+      else if (err?.error === 'invalid_credentials') setFormError(t('auth.errInvalid'))
+      else setFormError(t('auth.errGeneric'))
     } finally {
       setBusy(false)
     }
@@ -52,8 +54,8 @@ function AuthForm({ mode }: { mode: 'login' | 'register' }) {
         <div className="brand__logo" style={{ margin: '0 auto 10px', width: 56, height: 56, fontSize: 26 }}>
           S
         </div>
-        <h1 style={{ marginBottom: 4 }}>{isRegister ? 'Buat Akun' : 'Masuk'}</h1>
-        <p className="muted">Belajar Bahasa Isyarat ASL bersama Smartclusive</p>
+        <h1 style={{ marginBottom: 4 }}>{isRegister ? t('auth.register') : t('auth.signin')}</h1>
+        <p className="muted">{t('auth.subtitle')}</p>
       </div>
 
       <form className="card card--pad-lg" onSubmit={onSubmit} noValidate>
@@ -61,33 +63,33 @@ function AuthForm({ mode }: { mode: 'login' | 'register' }) {
 
         {isRegister && (
           <div className="field">
-            <label htmlFor="name">Nama</label>
+            <label htmlFor="name">{t('auth.name')}</label>
             <input
               id="name"
               className={'input' + (errors.name ? ' input--error' : '')}
               value={name}
               onChange={(e) => setName(e.target.value)}
-              placeholder="Nama lengkap"
+              placeholder={t('auth.namePlaceholder')}
             />
             {errors.name && <div className="field__error">{errors.name}</div>}
           </div>
         )}
 
         <div className="field">
-          <label htmlFor="email">Email</label>
+          <label htmlFor="email">{t('auth.email')}</label>
           <input
             id="email"
             type="email"
             className={'input' + (errors.email ? ' input--error' : '')}
             value={email}
             onChange={(e) => setEmail(e.target.value)}
-            placeholder="nama@contoh.com"
+            placeholder={t('auth.emailPlaceholder')}
           />
           {errors.email && <div className="field__error">{errors.email}</div>}
         </div>
 
         <div className="field">
-          <label htmlFor="password">Kata Sandi</label>
+          <label htmlFor="password">{t('auth.password')}</label>
           <input
             id="password"
             type="password"
@@ -100,17 +102,17 @@ function AuthForm({ mode }: { mode: 'login' | 'register' }) {
         </div>
 
         <button className="btn btn--primary btn--block mt" disabled={busy}>
-          {busy ? 'Memproses…' : isRegister ? 'Daftar' : 'Masuk'}
+          {busy ? t('auth.processing') : isRegister ? t('auth.register.btn') : t('auth.signin')}
         </button>
 
         <p className="center mt muted" style={{ fontSize: 14 }}>
           {isRegister ? (
             <>
-              Sudah punya akun? <Link to="/login">Masuk</Link>
+              {t('auth.haveAccount')} <Link to="/login">{t('auth.signin')}</Link>
             </>
           ) : (
             <>
-              Belum punya akun? <Link to="/register">Daftar</Link>
+              {t('auth.noAccount')} <Link to="/register">{t('auth.register.btn')}</Link>
             </>
           )}
         </p>

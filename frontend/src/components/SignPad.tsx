@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import type { SignKind } from '../api/types'
 import { signService, type SignProgress, type SignSession } from '../services/signService'
 import { CameraView } from './CameraView'
+import { useI18n } from '../store/i18n'
 
 interface Props {
   target: string
@@ -14,6 +15,7 @@ interface Props {
 // Delegates recognition to signService; drives it with mock "Sign / Wrong" buttons
 // standing in for real MediaPipe frames.
 export function SignPad({ target, kind, onComplete, onCancel }: Props) {
+  const { t } = useI18n()
   const units = useMemo(() => target.toUpperCase().replace(/[^A-Z0-9]/g, '').split(''), [target])
   const [progress, setProgress] = useState<SignProgress>({
     matched: [],
@@ -55,7 +57,8 @@ export function SignPad({ target, kind, onComplete, onCancel }: Props) {
   }
 
   const multiDigit = kind === 'number' && units.length > 1
-  const noun = kind === 'letter' ? 'huruf' : kind === 'number' ? 'angka' : 'kata'
+  const noun = t(kind === 'letter' ? 'sp.letter' : kind === 'number' ? 'sp.number' : 'sp.word')
+  const Noun = noun.charAt(0).toUpperCase() + noun.slice(1)
 
   return (
     <div>
@@ -73,39 +76,39 @@ export function SignPad({ target, kind, onComplete, onCancel }: Props) {
         })}
       </div>
 
-      {multiDigit && <div className="card__sub">Angka ditandatangani digit demi digit.</div>}
+      {multiDigit && <div className="card__sub">{t('sp.multiDigit')}</div>}
 
       {progress.complete ? (
         <div className="alert alert--success" style={{ marginTop: 12 }}>
-          ✅ {noun.charAt(0).toUpperCase() + noun.slice(1)} berhasil ditandatangani!
+          ✅ {t('sp.success', { Kind: Noun })}
         </div>
       ) : (
         <>
           {feedback === 'wrong' && (
             <div className="alert alert--error" style={{ marginTop: 12 }}>
-              Belum cocok. Isyaratkan <strong>{progress.expected}</strong> lalu coba lagi.
+              {t('sp.wrong', { x: progress.expected ?? '' })}
             </div>
           )}
           {feedback !== 'wrong' && (
             <div className="alert alert--info" style={{ marginTop: 12 }}>
-              Isyaratkan {noun}: <strong>{progress.expected}</strong>
+              {t('sp.signThe', { kind: noun, x: progress.expected ?? '' })}
             </div>
           )}
           <div className="row mt">
             <button className="btn btn--primary" onClick={signCorrect} disabled={busy}>
-              {busy ? 'Memeriksa…' : `Isyaratkan “${progress.expected}”`}
+              {busy ? t('sp.checking') : t('sp.signBtn', { x: progress.expected ?? '' })}
             </button>
             <button className="btn btn--ghost" onClick={signWrong} disabled={busy}>
-              Simulasikan salah
+              {t('sp.simWrong')}
             </button>
             {onCancel && (
               <button className="btn btn--ghost" onClick={onCancel} disabled={busy}>
-                Batal
+                {t('common.cancel')}
               </button>
             )}
           </div>
           <p className="muted" style={{ fontSize: 12, marginTop: 10 }}>
-            Tombol di atas menggantikan pengenalan kamera nyata (mock SignService).
+            {t('sp.mockNote')}
           </p>
         </>
       )}

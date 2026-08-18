@@ -1,11 +1,13 @@
 import { useEffect, useState } from 'react'
 import { api } from '../api/client'
 import type { QuizItem, Video } from '../api/types'
+import { useI18n } from '../store/i18n'
 import { Loading, ErrorState, Alert } from '../components/StateViews'
 import { VideoPlayer } from '../components/VideoPlayer'
 import { QuizRunner } from '../components/QuizRunner'
 
 export function Videos() {
+  const { t } = useI18n()
   const [videos, setVideos] = useState<Video[] | null>(null)
   const [error, setError] = useState('')
   const [quiz, setQuiz] = useState<{ quizId: string; items: QuizItem[]; forTitle: string } | null>(null)
@@ -14,7 +16,7 @@ export function Videos() {
   function load() {
     setError('')
     setVideos(null)
-    api.getVideos().then((r) => setVideos(r.videos)).catch(() => setError('Gagal memuat video.'))
+    api.getVideos().then((r) => setVideos(r.videos)).catch(() => setError(t('vid.errLoad')))
   }
   useEffect(load, [])
 
@@ -28,7 +30,7 @@ export function Videos() {
     return (
       <div className="page page--narrow">
         <div className="page-head">
-          <div className="eyebrow">Fitur 5 · Kuis Video</div>
+          <div className="eyebrow">{t('vid.quizEyebrow')}</div>
           <h1>{quiz.forTitle}</h1>
         </div>
         <div className="card card--pad-lg">
@@ -48,9 +50,9 @@ export function Videos() {
   return (
     <div className="page">
       <div className="page-head">
-        <div className="eyebrow">Fitur 5 · Video</div>
-        <h1>Pelajaran Video ASL</h1>
-        <p>Tonton sampai selesai untuk membuka kuis. Teks berbahasa Indonesia bisa dinyalakan/dimatikan.</p>
+        <div className="eyebrow">{t('vid.eyebrow')}</div>
+        <h1>{t('vid.title')}</h1>
+        <p>{t('vid.lead')}</p>
       </div>
 
       {error ? (
@@ -65,10 +67,10 @@ export function Videos() {
               <div className="card" key={v.id}>
                 <div className="row row--between" style={{ marginBottom: 10 }}>
                   <div className="card__title">{v.title}</div>
-                  <span className="pill">{v.type === 'letters' ? 'Huruf' : 'Angka'}</span>
+                  <span className="pill">{v.type === 'letters' ? t('vid.letters') : t('vid.numbers')}</span>
                 </div>
                 <VideoPlayer video={v} onEnded={() => onEnded(v)} />
-                {v.completed && <Alert kind="success">Video selesai ditonton.</Alert>}
+                {v.completed && <Alert kind="success">{t('vid.done')}</Alert>}
                 {readyQuiz && (
                   <button
                     className="btn btn--accent btn--block"
@@ -76,11 +78,11 @@ export function Videos() {
                       setQuiz({
                         quizId: readyQuiz.quizId,
                         items: readyQuiz.items,
-                        forTitle: v.type === 'letters' ? 'Kuis Huruf' : 'Kuis Angka',
+                        forTitle: v.type === 'letters' ? t('vid.quizLetters') : t('vid.quizNumbers'),
                       })
                     }
                   >
-                    Mulai Kuis
+                    {t('vid.startQuiz')}
                   </button>
                 )}
               </div>

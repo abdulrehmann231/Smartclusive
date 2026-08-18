@@ -1,5 +1,6 @@
 import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom'
 import { AuthProvider, RequireAuth } from './store/auth'
+import { I18nProvider, useI18n } from './store/i18n'
 import { Nav } from './components/Nav'
 import { Login, Register } from './pages/Auth'
 import { Dashboard } from './pages/Dashboard'
@@ -11,14 +12,15 @@ import { Deck } from './pages/Deck'
 import { Translate } from './pages/Translate'
 
 function Shell({ children }: { children: React.ReactNode }) {
+  const { t } = useI18n()
   return (
     <div className="app">
       <Nav />
       {children}
       <footer className="footer">
         <div className="footer__inner">
-          <span>© 2026 Smartclusive · Belajar Bahasa Isyarat ASL</span>
-          <span>Membuka akses ke dunia Tuli 🤟</span>
+          <span>{t('footer.copy')}</span>
+          <span>{t('footer.tag')}</span>
         </div>
       </footer>
     </div>
@@ -30,6 +32,7 @@ const guard = (el: React.ReactNode) => <RequireAuth>{el}</RequireAuth>
 export default function App() {
   return (
     <BrowserRouter>
+      <I18nProvider>
       <AuthProvider>
         <Shell>
           <Routes>
@@ -46,6 +49,7 @@ export default function App() {
           </Routes>
         </Shell>
       </AuthProvider>
+      </I18nProvider>
     </BrowserRouter>
   )
 }

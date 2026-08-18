@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
+import { useI18n } from '../store/i18n'
 
 type Perm = 'idle' | 'requesting' | 'granted' | 'denied'
 
@@ -22,6 +23,7 @@ interface Props {
 // Live camera with explicit permission gating + camera-denied state
 // (fingerspelling-recognition spec: no capture until consent).
 export function CameraView({ active = true, box, boxLabel, onCapture, captureSignal, overlay }: Props) {
+  const { t } = useI18n()
   const videoRef = useRef<HTMLVideoElement>(null)
   const streamRef = useRef<MediaStream | null>(null)
   const [perm, setPerm] = useState<Perm>('idle')
@@ -71,7 +73,7 @@ export function CameraView({ active = true, box, boxLabel, onCapture, captureSig
         ctx.fillStyle = '#29abe2'
         ctx.font = 'bold 40px Segoe UI, sans-serif'
         ctx.textAlign = 'center'
-        ctx.fillText('📷 contoh objek', w / 2, h / 2)
+        ctx.fillText('📷 ' + t('cam.sampleObject'), w / 2, h / 2)
       }
       onCapture(canvas.toDataURL('image/png'))
     }
@@ -85,9 +87,9 @@ export function CameraView({ active = true, box, boxLabel, onCapture, captureSig
       {(perm === 'idle' || perm === 'requesting') && (
         <div className="camera__denied">
           <div style={{ fontSize: 40 }}>📷</div>
-          <p>Verifikasi isyarat membutuhkan kamera.</p>
+          <p>{t('cam.needs')}</p>
           <button className="btn btn--accent" onClick={requestCamera} disabled={perm === 'requesting'}>
-            {perm === 'requesting' ? 'Meminta izin…' : 'Izinkan Kamera'}
+            {perm === 'requesting' ? t('cam.requesting') : t('cam.allow')}
           </button>
         </div>
       )}
@@ -95,9 +97,9 @@ export function CameraView({ active = true, box, boxLabel, onCapture, captureSig
       {perm === 'denied' && (
         <div className="camera__denied">
           <div style={{ fontSize: 40 }}>🚫</div>
-          <p>Akses kamera ditolak. Verifikasi isyarat membutuhkan kamera untuk berfungsi.</p>
+          <p>{t('cam.denied')}</p>
           <button className="btn btn--ghost" style={{ color: '#fff', borderColor: 'rgba(255,255,255,.5)' }} onClick={requestCamera}>
-            Coba lagi
+            {t('common.retry')}
           </button>
         </div>
       )}

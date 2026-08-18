@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { api } from '../api/client'
 import type { DetectResult } from '../api/types'
+import { useI18n } from '../store/i18n'
 import { Alert } from '../components/StateViews'
 import { CameraView } from '../components/CameraView'
 import { FingerspellReference } from '../components/FingerspellReference'
@@ -9,6 +10,7 @@ import { SignPad } from '../components/SignPad'
 type Step = 'camera' | 'detecting' | 'notfound' | 'detected' | 'sign' | 'done'
 
 export function Capture() {
+  const { t } = useI18n()
   const [step, setStep] = useState<Step>('camera')
   const [captureSignal, setCaptureSignal] = useState(0)
   const [photo, setPhoto] = useState<string | null>(null)
@@ -41,15 +43,15 @@ export function Capture() {
       english: result.english!,
       image: photo ?? '',
     })
-    setDeckMsg(res.duplicate ? 'Kata ini sudah ada di koleksimu.' : `“${result.english}” ditambahkan ke koleksi!`)
+    setDeckMsg(res.duplicate ? t('cards.duplicate') : t('cards.addedDeck', { word: result.english! }))
     setStep('done')
   }
 
   return (
     <div className="page page--narrow">
       <div className="page-head">
-        <div className="eyebrow">Fitur 2 · Kamera</div>
-        <h1>Foto &amp; Pelajari Objek</h1>
+        <div className="eyebrow">{t('cap.eyebrow')}</div>
+        <h1>{t('cap.title')}</h1>
       </div>
 
       <div className="card card--pad-lg">
@@ -58,9 +60,9 @@ export function Capture() {
             <CameraView active onCapture={onCaptured} captureSignal={captureSignal} />
             <div className="center mt">
               {step === 'detecting' ? (
-                <Alert kind="info">Mendeteksi objek…</Alert>
+                <Alert kind="info">{t('cap.detecting')}</Alert>
               ) : (
-                <button className="btn btn--accent" onClick={takePhoto}>📸 Ambil Foto</button>
+                <button className="btn btn--accent" onClick={takePhoto}>{t('cap.take')}</button>
               )}
             </div>
           </>
@@ -69,8 +71,8 @@ export function Capture() {
         {step === 'notfound' && (
           <div className="center">
             {photo && <img className="thumb" src={photo} alt="foto" style={{ aspectRatio: '4/3' }} />}
-            <Alert kind="error">Objek tidak dikenali. Silakan foto ulang.</Alert>
-            <button className="btn btn--primary" onClick={reset}>Foto Ulang</button>
+            <Alert kind="error">{t('cap.notFound')}</Alert>
+            <button className="btn btn--primary" onClick={reset}>{t('cap.retake')}</button>
           </div>
         )}
 
@@ -98,14 +100,14 @@ export function Capture() {
                 <div className="deck-word__id" style={{ textTransform: 'capitalize' }}>{result.indonesian}</div>
                 <div className="deck-word__en">{result.english}</div>
               </div>
-              <span className="pill">{result.source === 'dictionary' ? 'Kamus' : 'Terjemahan'}</span>
+              <span className="pill">{result.source === 'dictionary' ? t('cap.dict') : t('cap.translated')}</span>
             </div>
 
-            {result.alreadyInDeck && <Alert kind="info">Kata ini sudah ada di koleksimu.</Alert>}
+            {result.alreadyInDeck && <Alert kind="info">{t('cards.duplicate')}</Alert>}
 
             <div className="row mt">
-              <button className="btn btn--primary" onClick={() => setStep('sign')}>Lanjut Isyaratkan</button>
-              <button className="btn btn--ghost" onClick={reset}>Foto Ulang</button>
+              <button className="btn btn--primary" onClick={() => setStep('sign')}>{t('cap.continueSign')}</button>
+              <button className="btn btn--ghost" onClick={reset}>{t('cap.retake')}</button>
             </div>
           </>
         )}
@@ -121,7 +123,7 @@ export function Capture() {
           <div className="center">
             <div className="state__icon">🎉</div>
             <Alert kind="success">{deckMsg}</Alert>
-            <button className="btn btn--primary mt" onClick={reset}>Foto Objek Lain</button>
+            <button className="btn btn--primary mt" onClick={reset}>{t('cap.another')}</button>
           </div>
         )}
       </div>
