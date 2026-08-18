@@ -24,7 +24,6 @@ Smartclusive makes English vocabulary acquisition accessible through visual and 
 
 - Real video assets for the ASL letters and numbers lessons.
 - Expanded object detection coverage with a stronger open-vocabulary fallback.
-- ASL number reference images to match the letter reference set.
 - Research integration for Indonesian sign language (BISINDO) camera-to-text translation.
 - Mobile and offline support for classroom use without reliable internet.
 - Teacher dashboards and class-wide progress tracking.
