@@ -1,4 +1,6 @@
-from flask import Flask, jsonify
+import os
+
+from flask import Flask, jsonify, send_from_directory
 from flask_cors import CORS
 from flask_socketio import SocketIO
 
@@ -7,6 +9,18 @@ from smartclusive.models import db
 from smartclusive.routes import api_bp
 
 socketio = SocketIO(cors_allowed_origins="*", async_mode="threading")
+
+
+def _frontend_dist_dir() -> str | None:
+    """Return the built frontend dist directory if it exists, else None."""
+    # Allow explicit override; default to ../frontend/dist relative to this file.
+    override = os.environ.get("FRONTEND_DIST_DIR")
+    if override:
+        return override if os.path.isdir(override) else None
+    default = os.path.abspath(
+        os.path.join(os.path.dirname(__file__), "..", "frontend", "dist")
+    )
+    return default if os.path.isdir(default) else None
 
 
 def create_app(test_config: dict | None = None) -> Flask:
@@ -18,12 +32,15 @@ def create_app(test_config: dict | None = None) -> Flask:
     app.config.from_object(Config)
     if test_config:
         app.config.update(test_config)
-    CORS(app, supports_credentials=True)
+    origins = app.config.get("CORS_ORIGINS", "*")
+    if origins == "*":
+        CORS(app, supports_credentials=True)
+    else:
+        CORS(app, origins=[o.strip() for o in origins.split(",") if o.strip()], supports_credentials=True)
     db.init_app(app)
 
-    @app.route("/")
     @app.route("/health")
-    def index():
+    def health():
         return jsonify(
             {
                 "service": "Smartclusive backend",
@@ -34,6 +51,21 @@ def create_app(test_config: dict | None = None) -> Flask:
         )
 
     app.register_blueprint(api_bp, url_prefix="/api")
+
+    # In production (or when FRONTEND_DIST_DIR is set), serve the built React app.
+    dist_dir = _frontend_dist_dir()
+    if dist_dir:
+
+        @app.route("/", defaults={"path": ""})
+        @app.route("/<path:path>")
+        def serve_frontend(path: str):
+            # API and mock static routes are handled by Flask's blueprint/static_url_path,
+            # so this catch-all only fires for missing non-API paths.
+            file_path = os.path.join(dist_dir, path)
+            if path and os.path.isfile(file_path):
+                return send_from_directory(dist_dir, path)
+            return send_from_directory(dist_dir, "index.html")
+
     return app
 
 
@@ -49,11 +81,13 @@ def create_socketio_app() -> Flask:
     return app
 
 
+# Gunicorn entry point.
+app = create_socketio_app()
+
 if __name__ == "__main__":
-    app = create_socketio_app()
     socketio.run(
         app,
         host="0.0.0.0",
-        port=5000,
+        port=int(os.environ.get("PORT", 5000)),
         allow_unsafe_werkzeug=True,
     )
