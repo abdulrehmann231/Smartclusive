@@ -1,4 +1,10 @@
+import re
 import urllib.parse
+
+
+# Public-domain ASL alphabet illustrations from Wikimedia Commons.
+# See: https://commons.wikimedia.org/wiki/Category:American_Sign_Language_fingerspelling
+_WIKIMEDIA_BASE = "https://commons.wikimedia.org/wiki/Special:FilePath/"
 
 
 def svg_data_uri(label: str, emoji: str, hue: int = 199) -> str:
@@ -14,24 +20,19 @@ def svg_data_uri(label: str, emoji: str, hue: int = 199) -> str:
     return "data:image/svg+xml;utf8," + urllib.parse.quote(svg)
 
 
-_ASL_EMOJI = {
-    # Placeholder reference images — a colored tile with the letter/digit and a hand emoji.
-    # Replace with real ASL fingerspelling assets when available.
-    "default": "🤟",
-}
-
-
 def asl_reference_image(char: str) -> str:
-    """Return a placeholder reference image for an ASL letter or digit."""
+    """Return an ASL fingerspelling reference image for a letter or digit."""
+    # Letters A–Z use public-domain Wikimedia Commons illustrations.
+    if "A" <= char <= "Z":
+        file_name = f"Sign_language_{char}.svg"
+        return _WIKIMEDIA_BASE + urllib.parse.quote(file_name)
+    # Digits fall back to a colored placeholder until real ASL number assets are added.
     hue = (ord(char) * 17) % 360
-    return svg_data_uri(char, _ASL_EMOJI.get("default", "🤟"), hue)
+    return svg_data_uri(char, "🤟", hue)
 
 
 def word_image(english: str, emoji: str, hue: int) -> str:
     return svg_data_uri(english, emoji, hue)
-
-
-import re
 
 
 def fingerspelling_for(word: str) -> dict:

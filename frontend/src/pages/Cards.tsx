@@ -52,9 +52,14 @@ export function Cards() {
   async function onSigned() {
     if (!card || !correctId) return
     const opt = card.options.find((o) => o.id === correctId)!
+    const displayWord = `${card.indonesian} (${opt.english})`
     const res = await api.addToDeck({ indonesian: card.indonesian, english: opt.english, image: opt.image })
-    setDeckMsg(res.duplicate ? t('cards.duplicate') : t('cards.addedDeck', { word: opt.english }))
+    setDeckMsg(res.duplicate ? t('cards.duplicate') : t('cards.addedDeck', { word: displayWord }))
     setStep('done')
+  }
+
+  function practiceAgain() {
+    setStep('fingerspell')
   }
 
   return (
@@ -126,7 +131,14 @@ export function Cards() {
               <Confetti />
               <div className="state__icon">🎉</div>
               <Alert kind="success">{deckMsg}</Alert>
-              <button className="btn btn--primary mt" onClick={loadCard}>{t('cards.nextCard')}</button>
+              <div className="row mt">
+                <button className="btn btn--accent" onClick={practiceAgain}>
+                  {t('cards.practiceAgain')}
+                </button>
+                <button className="btn btn--primary" onClick={loadCard}>
+                  {t('cards.learnMore')}
+                </button>
+              </div>
             </div>
           )}
         </div>
