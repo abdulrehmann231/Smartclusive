@@ -77,12 +77,14 @@ export function Cards() {
         <div className="card card--pad-lg">
           <div className="center">
             <div className="card__sub">{t('cards.prompt')}</div>
+            <span className="pill">{t('cards.indonesianLabel')}</span>
             <h2 style={{ fontSize: 34, textTransform: 'capitalize', margin: '6px 0 18px' }}>{card.indonesian}</h2>
           </div>
 
           {step === 'guess' && (
             <>
               {wrongIds.size > 0 && <Alert kind="info">{t('cards.tryAgain')}</Alert>}
+              <div className="card__sub" style={{ marginBottom: 10 }}>{t('cards.englishOptions')}</div>
               <div className="options">
                 {card.options.map((o) => {
                   const img = revealed[o.id]
