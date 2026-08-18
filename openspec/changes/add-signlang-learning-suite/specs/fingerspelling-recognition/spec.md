@@ -52,6 +52,18 @@ The system SHALL verify a target word by checking each of its letters in order a
 - **THEN** the system does not report the word as complete
 - **AND** indicates the current expected letter so the learner can retry that letter
 
+### Requirement: Verify a multi-digit number as a sequence of digits
+The system SHALL verify a two- or three-digit number by treating it as an ordered sequence of single digits (0–9) and checking each digit in order, using the same per-target recognition as single digits. The system SHALL make clear that a multi-digit number is being signed digit by digit.
+
+#### Scenario: Multi-digit number signed correctly
+- **WHEN** the target is a multi-digit number and the learner signs each of its digits correctly and in order
+- **THEN** the system reports the number as correctly signed
+
+#### Scenario: A digit in the sequence is wrong
+- **WHEN** the learner signs a digit that does not match the expected next digit of the number
+- **THEN** the system does not report the number as complete
+- **AND** indicates the current expected digit so the learner can retry it
+
 ### Requirement: Provide progress feedback during signing
 The system SHALL indicate signing progress by showing which letters have been matched and which letter is currently expected.
 

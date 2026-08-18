@@ -110,6 +110,9 @@ There are **two independent detection problems** in this product. They have very
   - **Feature 1 cards** use a **curated static dictionary** (English, Indonesian, picture, 3 distractors) — an API cannot supply pictures or good distractors, so these stay hand-curated.
   - **Feature 2 open objects** translate the detected English label → Indonesian with a **free translator**. Preference order: **Argos Translate** (open-source, fully offline, en↔id, no key) → **MyMemory API** (free, no key, ~5k words/day) → self-hosted **LibreTranslate**. Feature 2 needs no distractors, so translation alone suffices there.
 - **ASL recognizer: TRAIN a small landmark classifier for A–Z + 0–9 (CONFIRMED — training accepted).** Training is now in scope for the ASL recognizer. Approach: extract MediaPipe Hands landmarks, normalize, and train a small classifier (e.g. an MLP or SVM) on **public ASL datasets** (ASL Alphabet, Sign Language MNIST, ASL digit sets) plus a few self-recorded samples, covering all 36 classes in one model. A landmark **KNN/template matcher** remains the zero-data quick-start and the offline fallback. (This "train a small classifier" scope does NOT extend to Feature 4 — see Architecture § B; that remains unsolved and out of scope.)
+- **Multi-digit numbers: teach by SIGNING EACH DIGIT IN SEQUENCE (CONFIRMED for v1).** The recognizer covers only the **atomic digits 0–9**. Two- and three-digit numbers are taught the **same way words are fingerspelled** — the app sets the target as a digit sequence (e.g. `25` → sign `2` then `5`; `100` → `1`,`0`,`0`) and the existing letter-by-letter verifier checks each digit in order. **No extra classes, model, or data are needed** for multi-digit numbers.
+  - **Important caveat (surface in the UI + curriculum):** native ASL does NOT express numbers ≥10 as sequenced digits — 10, 11–19, the tens, hundreds, etc. have their own distinct signs and many involve **movement**. So digit-by-digit is a deliberate **teaching simplification** ("spell the number"), not grammatical ASL. Label it clearly (e.g. "spell the number digit by digit").
+  - **Future (out of scope):** an advanced module could teach the real ASL forms for 10–20, tens, and hundreds as additional (partly motion-based) classes — its own change, not v1.
 - **Videos: Indonesian narration WITH Indonesian captions (CONFIRMED).** The team records the two lessons with spoken-Indonesian instruction and provides Indonesian captions (important for deaf/hard-of-hearing learners). Captions may be **AI-generated** — e.g. auto-transcribe the Indonesian audio (Whisper or similar) into a WebVTT caption track, then review.
 
 ## Open Questions
@@ -147,7 +150,28 @@ There are **two independent detection problems** in this product. They have very
 - **Ultralytics YOLOv8 / YOLO-World** — object + open-vocabulary detection. License: **AGPL-3.0** (note for distribution). Docs: https://docs.ultralytics.com
 - **Grounding DINO** (alt open-vocab detector) — https://github.com/IDEA-Research/GroundingDINO
 - **MediaPipe Hands** — hand landmarks (Apache-2.0) — https://developers.google.com/mediapipe
-- **ASL recognizer training data** — ASL Alphabet dataset (Kaggle: grassknoted/asl-alphabet), Sign Language MNIST (Kaggle: datamunge/sign-language-mnist), and an ASL digits/numbers set; combine for A–Z + 0–9.
+- **ASL recognizer training data (A–Z + 0–9)** — see the dedicated dataset list below.
 - **Free translation** — Argos Translate (https://github.com/argosopentech/argos-translate, offline en↔id), MyMemory API (https://mymemory.translated.net/doc/spec.php, no key), LibreTranslate (https://github.com/LibreTranslate/LibreTranslate, self-host).
 - **Caption generation** — OpenAI Whisper or faster-whisper for Indonesian ASR → WebVTT.
 - **ASL reference images** — a public ASL fingerspelling alphabet + numbers chart set (per-letter/per-digit images) for the on-screen reference.
+
+### ASL training datasets (open-source) — for the letter + number recognizer
+
+We need **both letters (A–Z) and numbers (0–9) = 36 classes**. Our recognizer trains on **MediaPipe hand landmarks**, so any of these image datasets work (run MediaPipe over them to get 21-keypoint vectors), and the landmark/CSV ones can be used almost directly. Verify each is genuinely **ASL** (some "sign digits" sets are Turkish/British — noted below).
+
+**Combined A–Z + 0–9 (best fit — covers everything in one set):**
+- **Comprehensive ASL image dataset — 36 classes, ~36,000 images (A–Z + 0–9).** Modern and large. ScienceDirect/PMC: https://www.ncbi.nlm.nih.gov/pmc/articles/PMC12877850/ and https://www.sciencedirect.com/science/article/pii/S2352340926000454
+- **Massey University hand-gesture dataset (Barczak et al. 2011) — 36 classes (A–Z + 0–9), 2,515 images.** Clean classic; note it collected letter "O" and digit "0" separately. https://www.researchgate.net/publication/266066851_A_New_2D_Static_Hand_Gesture_Colour_Image_Dataset_for_ASL_Gestures
+
+**Landmark/keypoint datasets (already in the 21-point MediaPipe format we train on):**
+- **American Sign Language A–Z + Hand Landmarks (Kaggle, srisahithis)** — ~8,100 images with 21 MediaPipe keypoints, A–Z + space (letters only). https://www.kaggle.com/datasets/srisahithis/american-sign-language-a-z-dataset-hand-landmarks
+- **American Sign Language Digit Dataset (Kaggle, rayeed045)** — 5,000 images, digits 0–9 (500 each), built with MediaPipe keypoints — good for the **numbers**. https://www.kaggle.com/datasets/rayeed045/american-sign-language-digit-dataset
+
+**Letters-only classics (large, good for A–Z):**
+- **ASL Alphabet (Kaggle, grassknoted)** — ~87,000 images, 29 classes (A–Z + space/delete/nothing). https://www.kaggle.com/datasets/grassknoted/asl-alphabet
+- **Sign Language MNIST (Kaggle datamunge / HF Voxel51)** — 28×28 grayscale, 24 letters (excludes J & Z because they move). https://www.kaggle.com/datasets/datamunge/sign-language-mnist · https://huggingface.co/datasets/Voxel51/American-Sign-Language-MNIST
+
+**If you prefer bounding-box detection instead of landmark classification (Roboflow Universe):**
+- ASL letter/number detection sets with boxes (e.g. Unipi "ASL Sign Language Detection", A–I + 1–10). https://universe.roboflow.com/unipi-4sk4y/asl-sign-language-detection · browse: https://universe.roboflow.com/search?q=class:american-sign-language
+
+**Recommended combo:** train on the **36-class comprehensive set** (or **Massey**) for full A–Z+0–9 coverage, supplement numbers with the **rayeed045 digit set**, and use **grassknoted** to bulk up letters. ⚠️ Skip British (BSL) and Turkish "sign digits" sets for labels — handshapes differ from ASL. ⚠️ Note ASL letter/number **handshape overlaps** (e.g. digit "2"≈"V", "6"≈"W", "9"≈"F", "0"≈"O"); disambiguate by mode (the app knows whether it is expecting a letter or a digit).
