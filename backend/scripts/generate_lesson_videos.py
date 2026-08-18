@@ -9,6 +9,7 @@ Run after installing dependencies:
 The script writes:
     backend/static/letters.mp4
     backend/static/numbers.mp4
+    backend/static/words.mp4
 
 Replace these with real ASL lesson videos when available.
 """
@@ -56,6 +57,15 @@ SLIDES = {
         ("4", "Empat jari lurus"),
         ("5", "Lima jari terbuka"),
         ("Hebat!", "Kamu siap untuk kuis"),
+    ],
+    "words": [
+        ("Kata ASL", "Pelajaran mengeja kata"),
+        ("CAT", "Kucing"),
+        ("DOG", "Anjing"),
+        ("BOOK", "Buku"),
+        ("APPLE", "Apel"),
+        ("MILK", "Susu"),
+        ("Bagus!", "Lanjut latihan di kuis"),
     ],
 }
 

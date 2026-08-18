@@ -77,7 +77,7 @@ const DICT: Dict = {
   'feat.quiz.title': { id: 'Kuis', en: 'Quiz' },
   'feat.quiz.desc': { id: 'Uji kata, huruf, dan angka.', en: 'Test words, letters and numbers.' },
   'feat.videos.title': { id: 'Video', en: 'Videos' },
-  'feat.videos.desc': { id: 'Pelajaran alfabet & angka ASL.', en: 'ASL alphabet & number lessons.' },
+  'feat.videos.desc': { id: 'Pelajaran alfabet, angka, & kata ASL.', en: 'ASL alphabet, number & word lessons.' },
 
   // Deck
   'deck.eyebrow': { id: 'Koleksi', en: 'Deck' },
@@ -206,6 +206,7 @@ const DICT: Dict = {
   'vid.quizEyebrow': { id: 'Fitur 5 · Kuis Video', en: 'Feature 5 · Video Quiz' },
   'vid.quizLetters': { id: 'Kuis Huruf', en: 'Letter Quiz' },
   'vid.quizNumbers': { id: 'Kuis Angka', en: 'Number Quiz' },
+  'vid.quizWords': { id: 'Kuis Kata', en: 'Word Quiz' },
   'vid.done': { id: 'Video selesai ditonton.', en: 'Video watched to the end.' },
   'vid.startQuiz': { id: 'Mulai Kuis', en: 'Start Quiz' },
   'vid.errLoad': { id: 'Gagal memuat video.', en: 'Failed to load videos.' },
@@ -214,6 +215,7 @@ const DICT: Dict = {
   'vid.resume': { id: 'Lanjut', en: 'Resume' },
   'vid.letters': { id: 'Huruf', en: 'Letters' },
   'vid.numbers': { id: 'Angka', en: 'Numbers' },
+  'vid.words': { id: 'Kata', en: 'Words' },
 
   // Translate (Feature 4)
   'tr.eyebrow': { id: 'Fitur 4 · Terjemahan', en: 'Feature 4 · Translation' },
