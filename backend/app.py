@@ -34,9 +34,21 @@ def create_app(test_config: dict | None = None) -> Flask:
         app.config.update(test_config)
     origins = app.config.get("CORS_ORIGINS", "*")
     if origins == "*":
-        CORS(app, supports_credentials=True)
+        # Reflect the request origin so credentials (auth headers / cookies) work
+        # while still allowing any frontend origin. A wildcard with credentials is
+        # rejected by browsers, so we match every origin explicitly.
+        CORS(app, supports_credentials=True, origins=r".*")
     else:
         CORS(app, origins=[o.strip() for o in origins.split(",") if o.strip()], supports_credentials=True)
+
+    @app.after_request
+    def ensure_cors_credentials(response):
+        # Flask-CORS with a regex reflects the origin; make sure the credentials
+        # header stays enabled for the reflected origin.
+        if response.headers.get("Access-Control-Allow-Origin"):
+            response.headers["Access-Control-Allow-Credentials"] = "true"
+        return response
+
     db.init_app(app)
 
     @app.route("/health")

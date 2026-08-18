@@ -27,7 +27,11 @@ def register_socket(socketio):
         except Exception:
             return {"error": "invalid_image"}
         sessions = get_sign_sessions()
-        state = sessions.process_frame(sid, image_bytes)
+        try:
+            state = sessions.process_frame(sid, image_bytes)
+        except Exception as exc:
+            print(f"[socket_events] sign frame processing failed: {exc}")
+            return {"error": "processing_failed"}
         if state is None:
             return {"error": "session_not_found"}
         socketio.emit("sign:progress", state, room=request.sid)
