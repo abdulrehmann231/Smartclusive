@@ -36,7 +36,7 @@ Add environment variables:
 
 | Key | Value |
 |---|---|
-| `PYTHON_VERSION` | `3.11` |
+| `PYTHON_VERSION` | `3.11` (required — the pinned dependencies do not build on Python 3.14) |
 | `SECRET_KEY` | Generate a strong random string |
 | `DATABASE_URL` | Use Render PostgreSQL (Internal Database URL) |
 | `DETECT_DEMO_FALLBACK` | `1` (set to `0` when a real YOLO model is available) |
@@ -90,6 +90,18 @@ Visit `https://<your-backend-url>/health` to confirm the API is running. You sho
   "socketio": "/socket.io"
 }
 ```
+
+## Troubleshooting
+
+### `Failed to build 'Pillow'` or similar build errors
+
+Render may default to Python 3.14, which is too new for the pinned dependencies (`Pillow==10.0.1`, `torch==2.1.0`, etc.). The repo includes `backend/.python-version` (3.11.9), but if Render still picks 3.14, explicitly set the environment variable:
+
+```
+PYTHON_VERSION=3.11
+```
+
+Then redeploy.
 
 ## Production notes
 
