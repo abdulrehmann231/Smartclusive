@@ -109,7 +109,7 @@ export const api = {
   },
 
   // ---------------- Capture ----------------
-  async detect(imageFile?: File): Promise<DetectResult> {
+  async detect(imageFile?: File | Blob): Promise<DetectResult> {
     if (!imageFile) return { detected: false }
     const form = new FormData()
     form.append('image', imageFile)

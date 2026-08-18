@@ -28,12 +28,22 @@ export function Capture() {
     setCaptureSignal((n) => n + 1)
   }
 
+  async function dataUrlToBlob(dataUrl: string): Promise<Blob> {
+    const res = await fetch(dataUrl)
+    return res.blob()
+  }
+
   async function onCaptured(dataUrl: string) {
     setPhoto(dataUrl)
     setStep('detecting')
-    const res = await api.detect()
-    setResult(res)
-    setStep(res.detected ? 'detected' : 'notfound')
+    try {
+      const blob = await dataUrlToBlob(dataUrl)
+      const res = await api.detect(blob)
+      setResult(res)
+      setStep(res.detected ? 'detected' : 'notfound')
+    } catch {
+      setStep('notfound')
+    }
   }
 
   async function onSigned() {
@@ -43,7 +53,8 @@ export function Capture() {
       english: result.english!,
       image: photo ?? '',
     })
-    setDeckMsg(res.duplicate ? t('cards.duplicate') : t('cards.addedDeck', { word: result.english! }))
+    const displayWord = `${result.indonesian!} (${result.english!})`
+    setDeckMsg(res.duplicate ? t('cards.duplicate') : t('cards.addedDeck', { word: displayWord }))
     setStep('done')
   }
 
