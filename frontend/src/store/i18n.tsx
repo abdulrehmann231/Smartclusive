@@ -158,6 +158,17 @@ const DICT: Dict = {
     id: 'Tombol di atas menggantikan pengenalan kamera nyata (mock SignService).',
     en: 'The buttons above stand in for real camera recognition (mock SignService).',
   },
+  'sp.errGeneric': { id: 'Gagal mengirim frame. Coba lagi.', en: 'Failed to send frame. Try again.' },
+  'sp.startPrompt': {
+    id: 'Klik mulai, lalu tunjukkan tanganmu di depan kamera.',
+    en: 'Click start, then show your hand in front of the camera.',
+  },
+  'sp.startBtn': { id: 'Mulai Isyaratkan', en: 'Start Signing' },
+  'sp.stopBtn': { id: 'Berhenti', en: 'Stop' },
+  'sp.liveNote': {
+    id: 'Frame kamera dikirim ke backend untuk dikenali model ASL.',
+    en: 'Camera frames are sent to the backend ASL model for recognition.',
+  },
 
   // Fingerspell reference
   'fs.ref': { id: 'Referensi jari untuk {word} (ASL)', en: 'Fingerspelling reference for {word} (ASL)' },
@@ -176,8 +187,8 @@ const DICT: Dict = {
     en: 'No camera is available on this device.',
   },
   'cam.hint': {
-    id: 'Tenang — kamu tetap bisa lanjut, pengenalan tanda disimulasikan.',
-    en: "No worries — you can still continue; sign recognition is simulated.",
+    id: 'Izinkan kamera agar model dapat mengenali isyaratmu.',
+    en: 'Allow the camera so the model can recognize your signs.',
   },
   'cam.sampleObject': { id: 'contoh objek', en: 'sample object' },
 

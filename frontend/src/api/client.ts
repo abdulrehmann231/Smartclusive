@@ -1,280 +1,155 @@
-// Mock API client — implements the frontend.md contract with in-memory state.
-// Swap this module for a real fetch/axios implementation later; screens never change.
-
 import type {
   AuthResult,
   Card,
   DeckWord,
   DetectResult,
-  Fingerspelling,
   GuessResult,
-  Letter,
-  QuizItem,
   QuizMode,
   QuizResult,
   QuizStart,
   Student,
   Video,
 } from './types'
-import {
-  CAPTIONS,
-  initialDeck,
-  pic,
-  seedWord,
-  VIDEOS,
-  WORDS,
-} from '../mock/data'
 
-const MIN_DECK = 3
+const API_BASE = (import.meta.env.VITE_API_URL || '').replace(/\/$/, '')
 
-function delay(ms = 420) {
-  return new Promise((r) => setTimeout(r, ms))
-}
-function uid(prefix: string) {
-  return prefix + '-' + Math.random().toString(36).slice(2, 8)
+function token() {
+  return localStorage.getItem('sc.token') || ''
 }
 
-// Build an ordered ASL fingerspelling reference for a word (English, uppercase).
-function fingerspell(word: string): Fingerspelling {
-  const clean = word.toUpperCase().replace(/[^A-Z0-9]/g, '')
-  const letters: Letter[] = clean.split('').map((ch) => ({
-    letter: ch,
-    image: pic(ch, '🤟', 199),
-  }))
-  return { word: clean, letters }
-}
-
-// ---- in-memory "database", keyed by student email ----
-interface DB {
-  students: Record<string, { student: Student; password: string; deck: DeckWord[] }>
-  tokens: Record<string, string> // token -> email
-  videos: Record<string, Video[]> // email -> videos
-}
-
-const db: DB = { students: {}, tokens: {}, videos: {} }
-
-function currentEmail(): string | null {
-  const token = localStorage.getItem('sc.token')
-  return token ? db.tokens[token] ?? null : null
-}
-function requireStudentEmail(): string {
-  const email = currentEmail()
-  if (!email) throw { status: 401, error: 'unauthorized' }
-  // Recreate a demo student on hot reload if the token outlived the module state.
-  if (!db.students[email]) {
-    db.students[email] = {
-      student: { id: uid('stu'), name: email.split('@')[0], email },
-      password: '',
-      deck: initialDeck(),
-    }
-    db.videos[email] = VIDEOS.map((v) => ({ ...v }))
+async function request<T>(
+  method: string,
+  path: string,
+  body?: unknown,
+  options: { multipart?: boolean } = {},
+): Promise<T> {
+  const url = `${API_BASE}${path}`
+  const headers: Record<string, string> = {
+    Authorization: `Bearer ${token()}`,
   }
-  return email
+  let fetchBody: BodyInit | undefined
+
+  if (options.multipart) {
+    fetchBody = body as FormData
+  } else if (body !== undefined) {
+    headers['Content-Type'] = 'application/json'
+    fetchBody = JSON.stringify(body)
+  }
+
+  const res = await fetch(url, {
+    method,
+    headers,
+    body: fetchBody,
+  })
+
+  let data: any = {}
+  try {
+    data = await res.json()
+  } catch {
+    data = {}
+  }
+
+  if (!res.ok) {
+    const err: any = { status: res.status, error: data.error || 'unknown' }
+    if (data.needed !== undefined) err.needed = data.needed
+    throw err
+  }
+  return data as T
 }
 
 export const api = {
-  // ---------------- Auth (student-account) ----------------
+  // ---------------- Auth ----------------
   async register(name: string, email: string, password: string): Promise<AuthResult> {
-    await delay()
-    email = email.toLowerCase().trim()
-    if (db.students[email]) throw { status: 409, error: 'email_taken' }
-    const student: Student = { id: uid('stu'), name, email }
-    db.students[email] = { student, password, deck: initialDeck() }
-    db.videos[email] = VIDEOS.map((v) => ({ ...v }))
-    const token = uid('tok')
-    db.tokens[token] = email
-    return { token, student }
+    return request('POST', '/api/auth/register', { name, email, password })
   },
 
   async login(email: string, password: string): Promise<AuthResult> {
-    await delay()
-    email = email.toLowerCase().trim()
-    const rec = db.students[email]
-    // Demo convenience: unknown accounts are auto-created so any login works.
-    if (!rec) {
-      const student: Student = { id: uid('stu'), name: email.split('@')[0], email }
-      db.students[email] = { student, password, deck: initialDeck() }
-      db.videos[email] = VIDEOS.map((v) => ({ ...v }))
-      const token = uid('tok')
-      db.tokens[token] = email
-      return { token, student }
-    }
-    if (rec.password && rec.password !== password) {
-      throw { status: 401, error: 'invalid_credentials' }
-    }
-    const token = uid('tok')
-    db.tokens[token] = email
-    return { token, student: rec.student }
+    return request('POST', '/api/auth/login', { email, password })
   },
 
   async logout(): Promise<void> {
-    await delay(150)
-    const token = localStorage.getItem('sc.token')
-    if (token) delete db.tokens[token]
+    await request('POST', '/api/auth/logout', undefined)
   },
 
   async me(): Promise<{ student: Student }> {
-    await delay(200)
-    const email = requireStudentEmail()
-    return { student: db.students[email].student }
+    return request('GET', '/api/auth/me')
   },
 
-  // ---------------- Deck (learner-deck) ----------------
+  // ---------------- Deck ----------------
   async getDeck(): Promise<{ words: DeckWord[] }> {
-    await delay()
-    const email = requireStudentEmail()
-    return { words: [...db.students[email].deck] }
+    return request('GET', '/api/deck')
   },
 
-  // Contract addition (flagged gap): explicit deck writer used by Feature 1 & 2.
-  // Returns { added, duplicate } so callers can show "added" vs "already in deck".
   async addToDeck(word: {
     indonesian: string
     english: string
     image: string
   }): Promise<{ added: boolean; duplicate: boolean; word: DeckWord }> {
-    await delay(200)
-    const email = requireStudentEmail()
-    const deck = db.students[email].deck
-    const existing = deck.find(
-      (w) => w.english.toLowerCase() === word.english.toLowerCase(),
-    )
-    if (existing) return { added: false, duplicate: true, word: existing }
-    const entry: DeckWord = {
-      id: uid('w'),
-      indonesian: word.indonesian,
-      english: word.english,
-      image: word.image,
-      mastery: 0,
-      learnedAt: new Date().toISOString(),
-    }
-    deck.push(entry)
-    return { added: true, duplicate: false, word: entry }
+    return request('POST', '/api/deck', word)
   },
 
-  // ---------------- Feature 1: cards (word-card-learning) ----------------
+  // ---------------- Cards ----------------
   async nextCard(): Promise<Card> {
-    await delay()
-    const correct = WORDS[Math.floor(Math.random() * WORDS.length)]
-    const distractors = WORDS.filter((w) => w.english !== correct.english)
-      .sort(() => Math.random() - 0.5)
-      .slice(0, 3)
-    const options = [correct, ...distractors]
-      .sort(() => Math.random() - 0.5)
-      .map(seedWord)
-    return { cardId: uid('c'), indonesian: correct.indonesian, options }
+    return request('GET', '/api/cards/next')
   },
 
   async guess(indonesian: string, optionId: string): Promise<GuessResult> {
-    await delay(300)
-    const correctWord = WORDS.find((w) => w.indonesian === indonesian)
-    const guessedEnglish = optionId.replace('opt-', '')
-    const revealedImage =
-      seedWord(WORDS.find((w) => w.english === guessedEnglish) ?? WORDS[0]).image
-    const isCorrect = !!correctWord && optionId === 'opt-' + correctWord.english
-    if (isCorrect && correctWord) {
-      return {
-        correct: true,
-        revealedImage,
-        correctOptionId: 'opt-' + correctWord.english,
-        fingerspelling: fingerspell(correctWord.english),
-      }
-    }
-    return { correct: false, revealedImage }
+    return request('POST', '/api/cards/guess', { indonesian, optionId })
   },
 
-  // ---------------- Feature 2: capture (camera-object-learning) ----------------
-  async detect(): Promise<DetectResult> {
-    await delay(700)
-    // 1-in-6 "not recognized" so the retake path is exercised.
-    if (Math.random() < 0.16) return { detected: false }
-    const email = requireStudentEmail()
-    const w = WORDS[Math.floor(Math.random() * WORDS.length)]
-    const dup = db.students[email].deck.some(
-      (d) => d.english.toLowerCase() === w.english.toLowerCase(),
-    )
-    return {
-      detected: true,
-      box: { x: 0.18, y: 0.2, w: 0.6, h: 0.55 },
-      english: w.english,
-      indonesian: w.indonesian,
-      source: Math.random() < 0.7 ? 'dictionary' : 'translated',
-      fingerspelling: fingerspell(w.english),
-      alreadyInDeck: dup,
-    }
+  // ---------------- Capture ----------------
+  async detect(imageFile?: File): Promise<DetectResult> {
+    if (!imageFile) return { detected: false }
+    const form = new FormData()
+    form.append('image', imageFile)
+    return request('POST', '/api/detect', form, { multipart: true })
   },
 
-  // ---------------- Feature 3: quiz (sign-quiz) ----------------
+  // ---------------- Quiz ----------------
   async quizStart(mode: QuizMode): Promise<QuizStart> {
-    await delay()
-    const email = requireStudentEmail()
-    const deck = db.students[email].deck
-    if (deck.length < MIN_DECK) {
-      throw { status: 422, error: 'deck_too_small', needed: MIN_DECK - deck.length }
-    }
-    let items: QuizItem[] = []
-    if (mode === 'sign_word') {
-      items = deck
-        .slice(0, 5)
-        .map((w) => ({ id: uid('q'), kind: 'word', prompt: w.english.toUpperCase() }))
-    } else if (mode === 'sign_letter') {
-      const letters = Array.from(
-        new Set(deck.flatMap((w) => w.english.toUpperCase().split(''))),
-      ).slice(0, 5)
-      items = letters.map((l) => ({ id: uid('q'), kind: 'letter', prompt: l }))
-    } else {
-      items = ['3', '7', '5', '2', '9'].map((n) => ({
-        id: uid('q'),
-        kind: 'number',
-        prompt: n,
-      }))
-    }
-    return { quizId: uid('quiz'), items }
+    return request('POST', `/api/quiz/start?mode=${mode}`)
   },
 
   async quizAnswer(quizId: string, itemId: string, correct: boolean): Promise<{ correct: boolean }> {
-    await delay(120)
-    void quizId
-    void itemId
-    return { correct }
+    return request('POST', `/api/quiz/${quizId}/answer`, { itemId, correct })
   },
 
-  // Given results, bump mastery on the deck (mock of server-side mastery update).
-  async quizFinish(results: boolean[]): Promise<QuizResult> {
-    await delay(200)
-    const email = requireStudentEmail()
-    const deck = db.students[email].deck
-    const correct = results.filter(Boolean).length
-    // Reward correct answers by nudging mastery on a few deck words.
-    deck.slice(0, correct).forEach((w) => {
-      w.mastery = Math.min(5, w.mastery + 1)
-    })
-    return { correct, incorrect: results.length - correct, total: results.length }
+  async quizFinish(quizId: string, results: boolean[]): Promise<QuizResult> {
+    return request('POST', `/api/quiz/${quizId}/finish`, { results })
   },
 
-  // ---------------- Feature 5: videos (learning-videos) ----------------
+  // ---------------- Videos ----------------
   async getVideos(): Promise<{ videos: Video[] }> {
-    await delay()
-    const email = requireStudentEmail()
-    return { videos: [...db.videos[email]] }
+    return request('GET', '/api/videos')
   },
 
   async completeVideo(id: string): Promise<{ completed: boolean; quiz: QuizStart }> {
-    await delay(300)
-    const email = requireStudentEmail()
-    const vids = db.videos[email]
-    const v = vids.find((x) => x.id === id)
-    if (v) v.completed = true
-    const isLetters = v?.type === 'letters'
-    const items: QuizItem[] = isLetters
-      ? ['A', 'B', 'C'].map((l) => ({ id: uid('q'), kind: 'letter', prompt: l }))
-      : ['1', '2', '3'].map((n) => ({ id: uid('q'), kind: 'number', prompt: n }))
-    return { completed: true, quiz: { quizId: uid('quiz'), items } }
+    return request('POST', `/api/videos/${id}/complete`)
   },
 
+  // Static Indonesian caption cues for the mock video player.
   captionsFor(type: string): string[] {
-    return CAPTIONS[type] ?? []
+    return type === 'letters'
+      ? [
+          'Selamat datang di pelajaran alfabet ASL.',
+          'Mari kita mulai dengan huruf A.',
+          'Kepalkan tangan dengan ibu jari di samping.',
+          'Sekarang huruf B, jari lurus rapat.',
+          'Bagus! Lanjut ke huruf berikutnya.',
+        ]
+      : type === 'numbers'
+        ? [
+            'Selamat datang di pelajaran angka ASL.',
+            'Angka satu: telunjuk ke atas.',
+            'Angka dua: telunjuk dan jari tengah.',
+            'Angka tiga: tambahkan ibu jari.',
+            'Hebat! Kamu siap untuk kuis.',
+          ]
+        : []
   },
 }
 
 export type Api = typeof api
+
+// Re-export for the detect service seam.
+export { api as detectService }
