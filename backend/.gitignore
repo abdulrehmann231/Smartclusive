@@ -6,3 +6,5 @@ __pycache__/
 .pytest_cache/
 data/*.db
 static/*.mp4
+server.log
+nohup.out
