@@ -30,7 +30,7 @@ export function QuizRunner({ quizId, items, onExit }: Props) {
     if (idx + 1 < items.length) {
       setIdx(idx + 1)
     } else {
-      const res = await api.quizFinish(next)
+      const res = await api.quizFinish(quizId, next)
       setSummary(res)
     }
   }

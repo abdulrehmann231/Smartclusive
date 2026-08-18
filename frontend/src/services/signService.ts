@@ -1,7 +1,3 @@
-// Mock SignService — hides all camera/ML behind one interface (frontend.md rule 2).
-// Simulates the Socket.IO sign:progress / sign:done flow: each "frame" advances
-// the match by one letter after a short delay. Swap for real MediaPipe + backend later.
-
 import type { SignKind } from '../api/types'
 
 export interface SignProgress {
@@ -12,52 +8,77 @@ export interface SignProgress {
 }
 
 export interface SignSession {
-  // Simulate the learner producing the next expected sign correctly.
-  signNext(): Promise<SignProgress>
-  // Simulate signing a wrong sign (no advance); returns current progress + wrong flag.
-  signWrong(): Promise<SignProgress & { wrong: boolean }>
   state(): SignProgress
+  sendFrame(imageDataUrl: string): Promise<SignProgress>
+  stop(): void
 }
 
-class MockSignSession implements SignSession {
-  private target: string
-  private units: string[]
-  private idx = 0
+const API_BASE = (import.meta.env.VITE_API_URL || '').replace(/\/$/, '')
 
-  constructor(target: string, _kind: SignKind) {
-    this.target = target.toUpperCase()
-    // words & multi-digit numbers are verified unit-by-unit; single letter/number = 1 unit
-    this.units = this.target.replace(/[^A-Z0-9]/g, '').split('')
+function token() {
+  return localStorage.getItem('sc.token') || ''
+}
+
+async function request<T>(method: string, path: string, body?: unknown): Promise<T> {
+  const url = `${API_BASE}${path}`
+  const headers: Record<string, string> = {
+    Authorization: `Bearer ${token()}`,
+    'Content-Type': 'application/json',
+  }
+  const res = await fetch(url, {
+    method,
+    headers,
+    body: body === undefined ? undefined : JSON.stringify(body),
+  })
+  const data = await res.json().catch(() => ({}))
+  if (!res.ok) {
+    throw { status: res.status, error: data.error || 'unknown' }
+  }
+  return data as T
+}
+
+function stripDataUrlPrefix(dataUrl: string): string {
+  const idx = dataUrl.indexOf(',')
+  return idx >= 0 ? dataUrl.slice(idx + 1) : dataUrl
+}
+
+class RestSignSession implements SignSession {
+  private sessionId: string
+  private progress: SignProgress
+  private stopped = false
+
+  constructor(sessionId: string, initial: SignProgress) {
+    this.sessionId = sessionId
+    this.progress = initial
   }
 
   state(): SignProgress {
-    return {
-      matched: this.units.slice(0, this.idx),
-      expected: this.idx < this.units.length ? this.units[this.idx] : null,
-      complete: this.idx >= this.units.length,
-      target: this.target,
-    }
+    return this.progress
   }
 
-  async signNext(): Promise<SignProgress> {
-    await new Promise((r) => setTimeout(r, 650))
-    if (this.idx < this.units.length) this.idx++
-    return this.state()
+  async sendFrame(imageDataUrl: string): Promise<SignProgress> {
+    if (this.stopped) return this.progress
+    const image = stripDataUrlPrefix(imageDataUrl)
+    const res = await request<SignProgress>('POST', '/api/sign/frame', {
+      sessionId: this.sessionId,
+      image,
+    })
+    this.progress = res
+    return res
   }
 
-  async signWrong(): Promise<SignProgress & { wrong: boolean }> {
-    await new Promise((r) => setTimeout(r, 650))
-    return { ...this.state(), wrong: true }
+  stop(): void {
+    this.stopped = true
+    request('POST', '/api/sign/stop', { sessionId: this.sessionId }).catch(() => {})
   }
 }
 
 export const signService = {
-  // emit "sign:start"
-  start(target: string, kind: SignKind): SignSession {
-    return new MockSignSession(target, kind)
+  async start(target: string, kind: SignKind): Promise<SignSession> {
+    const res = await request<{ sessionId: string; state: SignProgress }>('POST', '/api/sign/start', {
+      target,
+      kind,
+    })
+    return new RestSignSession(res.sessionId, res.state)
   },
 }
-
-// DetectService is provided by api.detect() in this mock build; kept here as the
-// documented seam so a real MediaPipe/YOLO detector can replace it without UI change.
-export { api as detectService } from '../api/client'
