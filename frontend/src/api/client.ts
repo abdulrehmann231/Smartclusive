@@ -137,27 +137,6 @@ export const api = {
   async completeVideo(id: string): Promise<{ completed: boolean; quiz: QuizStart }> {
     return request('POST', `/api/videos/${id}/complete`)
   },
-
-  // Static Indonesian caption cues for the mock video player.
-  captionsFor(type: string): string[] {
-    return type === 'letters'
-      ? [
-          'Selamat datang di pelajaran alfabet ASL.',
-          'Mari kita mulai dengan huruf A.',
-          'Kepalkan tangan dengan ibu jari di samping.',
-          'Sekarang huruf B, jari lurus rapat.',
-          'Bagus! Lanjut ke huruf berikutnya.',
-        ]
-      : type === 'numbers'
-        ? [
-            'Selamat datang di pelajaran angka ASL.',
-            'Angka satu: telunjuk ke atas.',
-            'Angka dua: telunjuk dan jari tengah.',
-            'Angka tiga: tambahkan ibu jari.',
-            'Hebat! Kamu siap untuk kuis.',
-          ]
-        : []
-  },
 }
 
 export type Api = typeof api

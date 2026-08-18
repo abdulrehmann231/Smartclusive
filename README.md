@@ -24,7 +24,6 @@ Smartclusive makes English vocabulary acquisition accessible through visual and 
 
 - Real video assets for the ASL letters and numbers lessons.
 - Expanded object detection coverage with a stronger open-vocabulary fallback.
-- ASL number reference images to match the letter reference set.
 - Research integration for Indonesian sign language (BISINDO) camera-to-text translation.
 - Mobile and offline support for classroom use without reliable internet.
 - Teacher dashboards and class-wide progress tracking.
@@ -58,7 +57,14 @@ Smartclusive makes English vocabulary acquisition accessible through visual and 
 
 The backend runs on port 5000 by default.
 
-The backend serves lesson videos from `backend/static/`. Placeholder MP4 files are generated automatically for development; replace `letters.mp4` and `numbers.mp4` with real ASL lesson videos when available.
+The backend serves lesson videos from `backend/static/`. Generate placeholder MP4 files for development:
+
+```bash
+cd backend
+python scripts/generate_lesson_videos.py
+```
+
+Replace `backend/static/letters.mp4` and `backend/static/numbers.mp4` with real ASL lesson videos when available.
 
 ### Frontend
 
