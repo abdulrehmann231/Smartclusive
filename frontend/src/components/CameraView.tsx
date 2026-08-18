@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { useI18n } from '../store/i18n'
 
-type Perm = 'idle' | 'requesting' | 'granted' | 'denied'
+type Perm = 'idle' | 'requesting' | 'granted' | 'denied' | 'unavailable'
 
 interface Box {
   x: number
@@ -20,7 +20,7 @@ interface Props {
   overlay?: React.ReactNode
 }
 
-// Live camera with explicit permission gating + camera-denied state
+// Live camera with explicit permission gating + graceful fallbacks
 // (fingerspelling-recognition spec: no capture until consent).
 export function CameraView({ active = true, box, boxLabel, onCapture, captureSignal, overlay }: Props) {
   const { t } = useI18n()
@@ -29,24 +29,35 @@ export function CameraView({ active = true, box, boxLabel, onCapture, captureSig
   const [perm, setPerm] = useState<Perm>('idle')
 
   async function requestCamera() {
+    if (!navigator.mediaDevices?.getUserMedia) {
+      setPerm('unavailable')
+      return
+    }
     setPerm('requesting')
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user' }, audio: false })
       streamRef.current = stream
-      if (videoRef.current) {
-        videoRef.current.srcObject = stream
-        await videoRef.current.play().catch(() => {})
-      }
+      // Render the <video> first, then bind the stream in the effect below.
       setPerm('granted')
-    } catch {
-      setPerm('denied')
+    } catch (err: unknown) {
+      const name = (err as { name?: string })?.name
+      setPerm(name === 'NotAllowedError' || name === 'SecurityError' ? 'denied' : 'unavailable')
     }
   }
+
+  // Attach the stream once the <video> element is actually in the DOM.
+  useEffect(() => {
+    if (perm === 'granted' && videoRef.current && streamRef.current) {
+      const v = videoRef.current
+      v.srcObject = streamRef.current
+      v.play().catch(() => {})
+    }
+  }, [perm])
 
   useEffect(() => {
     if (active) requestCamera()
     return () => {
-      streamRef.current?.getTracks().forEach((t) => t.stop())
+      streamRef.current?.getTracks().forEach((tr) => tr.stop())
       streamRef.current = null
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -62,7 +73,7 @@ export function CameraView({ active = true, box, boxLabel, onCapture, captureSig
     canvas.width = w
     canvas.height = h
     const ctx = canvas.getContext('2d')
-    if (v && ctx && perm === 'granted') {
+    if (v && ctx && perm === 'granted' && v.videoWidth) {
       ctx.drawImage(v, 0, 0, w, h)
       onCapture(canvas.toDataURL('image/png'))
     } else {
@@ -80,11 +91,16 @@ export function CameraView({ active = true, box, boxLabel, onCapture, captureSig
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [captureSignal])
 
+  const showVideo = perm === 'granted'
+  const showAsk = perm === 'idle' || perm === 'requesting'
+  const showFallback = perm === 'denied' || perm === 'unavailable'
+
   return (
     <div className="camera">
-      {perm === 'granted' && <video ref={videoRef} playsInline muted />}
+      {/* Keep the element mounted while granted so the ref exists for binding. */}
+      {showVideo && <video ref={videoRef} playsInline muted autoPlay />}
 
-      {(perm === 'idle' || perm === 'requesting') && (
+      {showAsk && (
         <div className="camera__denied">
           <div style={{ fontSize: 40 }}>📷</div>
           <p>{t('cam.needs')}</p>
@@ -94,17 +110,22 @@ export function CameraView({ active = true, box, boxLabel, onCapture, captureSig
         </div>
       )}
 
-      {perm === 'denied' && (
+      {showFallback && (
         <div className="camera__denied">
-          <div style={{ fontSize: 40 }}>🚫</div>
-          <p>{t('cam.denied')}</p>
-          <button className="btn btn--ghost" style={{ color: '#fff', borderColor: 'rgba(255,255,255,.5)' }} onClick={requestCamera}>
+          <div style={{ fontSize: 40 }}>{perm === 'denied' ? '🚫' : '📷'}</div>
+          <p>{perm === 'denied' ? t('cam.denied') : t('cam.unavailable')}</p>
+          <p className="camera__hint">{t('cam.hint')}</p>
+          <button
+            className="btn btn--ghost"
+            style={{ color: '#fff', borderColor: 'rgba(255,255,255,.5)' }}
+            onClick={requestCamera}
+          >
             {t('common.retry')}
           </button>
         </div>
       )}
 
-      {box && perm !== 'denied' && (
+      {box && showVideo && (
         <div
           className="camera__box"
           style={{
