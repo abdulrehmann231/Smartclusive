@@ -26,7 +26,12 @@ def asl_reference_image(char: str) -> str:
     if "A" <= char <= "Z":
         file_name = f"Sign_language_{char}.svg"
         return _WIKIMEDIA_BASE + urllib.parse.quote(file_name)
-    # Digits fall back to a colored placeholder until real ASL number assets are added.
+    # Digits 0–9 use real ASL number reference images shipped in backend/static.
+    # 0 is the Gallaudet alphabet zero SVG; 1–9 are public-domain Wikimedia photos.
+    if "0" <= char <= "9":
+        ext = "svg" if char == "0" else "jpg"
+        return f"/mock/asl/numbers/{char}.{ext}"
+    # Fallback for any other character.
     hue = (ord(char) * 17) % 360
     return svg_data_uri(char, "🤟", hue)
 

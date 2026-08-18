@@ -26,6 +26,9 @@ class Config:
         "ASL_TEMPLATES_PATH", os.path.join(DATA_DIR, "asl_templates.json")
     )
 
+    # CORS: comma-separated list of allowed origins. Defaults to "*" for local dev.
+    CORS_ORIGINS = os.environ.get("CORS_ORIGINS", "*")
+
     # Object detection
     YOLO_MODEL = os.environ.get("YOLO_MODEL", "yolov8n.pt")
     # If the real detector cannot be loaded, return demo detections so the UI can be exercised.
