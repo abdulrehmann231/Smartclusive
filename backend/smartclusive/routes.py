@@ -277,7 +277,11 @@ def sign_frame():
         image_bytes = base64.b64decode(image_b64)
     except Exception:
         return jsonify({"error": "invalid_image"}), 400
-    state = get_sign_sessions().process_frame(sid, image_bytes)
+    try:
+        state = get_sign_sessions().process_frame(sid, image_bytes)
+    except Exception as exc:
+        print(f"[routes] sign frame processing failed: {exc}")
+        return jsonify({"error": "processing_failed"}), 500
     if state is None:
         return jsonify({"error": "session_not_found"}), 404
     return jsonify(state), 200
