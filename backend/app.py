@@ -34,20 +34,27 @@ def create_app(test_config: dict | None = None) -> Flask:
         app.config.update(test_config)
     origins = app.config.get("CORS_ORIGINS", "*")
     if origins == "*":
-        # Reflect the request origin so credentials (auth headers / cookies) work
-        # while still allowing any frontend origin. A wildcard with credentials is
-        # rejected by browsers, so we match every origin explicitly.
-        CORS(app, supports_credentials=True, origins=r".*")
+        # Accept requests from anyone. The frontend authenticates with a Bearer
+        # token in the Authorization header (not cookies), so credentialed CORS
+        # is unnecessary. A plain wildcard is the most robust cross-origin setup
+        # and is accepted by every browser for preflight and actual requests.
+        CORS(
+            app,
+            resources={r"/*": {"origins": "*"}},
+            supports_credentials=False,
+            allow_headers="*",
+            expose_headers="*",
+            methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+        )
     else:
-        CORS(app, origins=[o.strip() for o in origins.split(",") if o.strip()], supports_credentials=True)
-
-    @app.after_request
-    def ensure_cors_credentials(response):
-        # Flask-CORS with a regex reflects the origin; make sure the credentials
-        # header stays enabled for the reflected origin.
-        if response.headers.get("Access-Control-Allow-Origin"):
-            response.headers["Access-Control-Allow-Credentials"] = "true"
-        return response
+        CORS(
+            app,
+            resources={r"/*": {"origins": [o.strip() for o in origins.split(",") if o.strip()]}},
+            supports_credentials=True,
+            allow_headers="*",
+            expose_headers="*",
+            methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+        )
 
     db.init_app(app)
 
