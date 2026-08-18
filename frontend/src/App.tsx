@@ -1,7 +1,7 @@
 import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom'
 import { AuthProvider, RequireAuth, useAuth } from './store/auth'
 import { I18nProvider, useI18n } from './store/i18n'
-import { FontMode } from './components/FontMode'
+import { ThemeProvider } from './store/theme'
 import { Nav } from './components/Nav'
 import { Landing } from './pages/Landing'
 import { Login, Register } from './pages/Auth'
@@ -41,9 +41,9 @@ function Home() {
 export default function App() {
   return (
     <BrowserRouter>
+      <ThemeProvider>
       <I18nProvider>
       <AuthProvider>
-        <FontMode />
         <Shell>
           <Routes>
             <Route path="/login" element={<Login />} />
@@ -60,6 +60,7 @@ export default function App() {
         </Shell>
       </AuthProvider>
       </I18nProvider>
+      </ThemeProvider>
     </BrowserRouter>
   )
 }
