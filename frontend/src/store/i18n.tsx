@@ -102,6 +102,8 @@ const DICT: Dict = {
   'cards.addedDeck': { id: '“{word}” ditambahkan ke koleksi!', en: '“{word}” added to your deck!' },
   'cards.duplicate': { id: 'Kata ini sudah ada di koleksimu.', en: 'This word is already in your deck.' },
   'cards.nextCard': { id: 'Kartu Berikutnya', en: 'Next Card' },
+  'cards.practiceAgain': { id: 'Latih Kata Ini Lagi', en: 'Practice this word again' },
+  'cards.learnMore': { id: 'Pelajari Kata Lain', en: 'Learn more words' },
   'cards.errLoad': { id: 'Gagal memuat kartu.', en: 'Failed to load card.' },
 
   // Capture (Feature 2)
