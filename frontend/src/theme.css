@@ -272,22 +272,45 @@ h1, h2, h3 { line-height: 1.15; margin: 0 0 0.4em; }
 }
 
 /* ---------------- OptionTile (flip) ---------------- */
-.options { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+@keyframes flipIn {
+  from { transform: rotateY(90deg); opacity: 0; }
+  60%  { transform: rotateY(-8deg); opacity: 1; }
+  to   { transform: rotateY(0); opacity: 1; }
+}
+.options { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; perspective: 900px; }
 .tile {
   border: 2px solid var(--line); border-radius: var(--radius);
-  background: #fff; cursor: pointer; padding: 0; overflow: hidden;
-  min-height: 120px; display: grid; place-items: center; text-align: center;
+  background: #fff; cursor: pointer; padding: 14px 12px; overflow: hidden;
+  min-height: 128px; display: flex; flex-direction: column; align-items: center; justify-content: center;
+  gap: 8px; text-align: center;
   font-size: 18px; font-weight: 800; color: var(--ink);
-  transition: border-color .15s, box-shadow .15s, transform .05s;
+  transition: border-color .18s, box-shadow .18s, transform .12s, background .25s;
 }
 .tile:hover:not(:disabled) { border-color: var(--brand); box-shadow: var(--shadow-sm); }
 .tile:active:not(:disabled) { transform: translateY(1px); }
 .tile:disabled { cursor: default; }
-.tile--correct { border-color: var(--success); box-shadow: 0 0 0 3px var(--success-050); }
-.tile--wrong { border-color: var(--danger); opacity: .85; }
-.tile__pic { width: 100%; }
-.tile__pic img { width: 100%; aspect-ratio: 16/10; object-fit: cover; display: block; }
-.tile__caption { padding: 8px; font-size: 14px; }
+
+/* Revealed state animates a flip and no longer fills the whole card */
+.tile--revealed { animation: flipIn .4s cubic-bezier(.2,.8,.3,1.1) both; }
+
+/* Correct → transparent green gradient · Wrong → transparent red */
+.tile--correct {
+  border-color: var(--success);
+  background: linear-gradient(155deg, rgba(52, 199, 89, 0.16), rgba(35, 165, 90, 0.30));
+  box-shadow: 0 0 0 3px rgba(52, 199, 89, 0.18);
+}
+.tile--wrong {
+  border-color: var(--danger);
+  background: linear-gradient(155deg, rgba(226, 59, 59, 0.12), rgba(226, 59, 59, 0.24));
+}
+
+.tile__pic { display: flex; flex-direction: column; align-items: center; gap: 8px; width: 100%; }
+.tile__pic img {
+  width: 96px; height: 70px; object-fit: contain; display: block;
+  border-radius: 10px; background: rgba(255, 255, 255, 0.65);
+}
+.tile__caption { font-size: 15px; font-weight: 800; text-transform: capitalize; }
+.tile__mark { font-size: 20px; line-height: 1; }
 
 /* ---------------- Fingerspell reference ---------------- */
 .fs-ref { display: flex; flex-wrap: wrap; gap: 10px; }

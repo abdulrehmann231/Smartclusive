@@ -42,7 +42,8 @@ export function Cards() {
     if (res.correct) {
       setCorrectId(optionId)
       setFs(res.fingerspelling ?? null)
-      setStep('fingerspell')
+      // Let the green "correct" card show/flip before advancing to fingerspelling.
+      setTimeout(() => setStep('fingerspell'), 900)
     } else {
       setWrongIds((s) => new Set(s).add(optionId))
     }
@@ -85,12 +86,18 @@ export function Cards() {
                   return (
                     <button
                       key={o.id}
-                      className={'tile' + (isCorrect ? ' tile--correct' : '') + (isWrong ? ' tile--wrong' : '')}
+                      className={
+                        'tile' +
+                        (img ? ' tile--revealed' : '') +
+                        (isCorrect ? ' tile--correct' : '') +
+                        (isWrong ? ' tile--wrong' : '')
+                      }
                       onClick={() => onGuess(o.id)}
                       disabled={!!img}
                     >
                       {img ? (
                         <span className="tile__pic">
+                          <span className="tile__mark">{isCorrect ? '✅' : '❌'}</span>
                           <img src={img} alt={o.english} />
                           <span className="tile__caption">{o.english}</span>
                         </span>
