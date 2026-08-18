@@ -83,7 +83,7 @@ export interface QuizResult {
 export interface Video {
   id: string
   title: string
-  type: 'letters' | 'numbers'
+  type: 'letters' | 'numbers' | 'words'
   url: string
   captionsUrl: string
   completed: boolean

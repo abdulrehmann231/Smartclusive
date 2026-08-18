@@ -18,6 +18,13 @@ VIDEOS = [
         "url": "/mock/numbers.mp4",
         "captionsUrl": "/mock/numbers.id.vtt",
     },
+    {
+        "id": "v-words",
+        "title": "Kata-kata ASL",
+        "type": "words",
+        "url": "/mock/words.mp4",
+        "captionsUrl": "/mock/words.id.vtt",
+    },
 ]
 
 

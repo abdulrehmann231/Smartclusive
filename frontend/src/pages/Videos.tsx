@@ -67,7 +67,7 @@ export function Videos() {
               <div className="card" key={v.id}>
                 <div className="row row--between" style={{ marginBottom: 10 }}>
                   <div className="card__title">{v.title}</div>
-                  <span className="pill">{v.type === 'letters' ? t('vid.letters') : t('vid.numbers')}</span>
+                  <span className="pill">{v.type === 'letters' ? t('vid.letters') : v.type === 'numbers' ? t('vid.numbers') : t('vid.words')}</span>
                 </div>
                 <VideoPlayer video={v} onEnded={() => onEnded(v)} />
                 {v.completed && <Alert kind="success">{t('vid.done')}</Alert>}
@@ -78,7 +78,12 @@ export function Videos() {
                       setQuiz({
                         quizId: readyQuiz.quizId,
                         items: readyQuiz.items,
-                        forTitle: v.type === 'letters' ? t('vid.quizLetters') : t('vid.quizNumbers'),
+                        forTitle:
+                          v.type === 'letters'
+                            ? t('vid.quizLetters')
+                            : v.type === 'numbers'
+                              ? t('vid.quizNumbers')
+                              : t('vid.quizWords'),
                       })
                     }
                   >

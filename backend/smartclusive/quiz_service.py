@@ -5,6 +5,7 @@ from typing import Optional
 from smartclusive.config import Config
 from smartclusive.models import db, DeckWord
 from smartclusive.deck_service import eligible_words, bump_mastery
+from smartclusive.dictionary import get_dictionary
 
 
 _active_quizzes: dict = {}
@@ -90,7 +91,15 @@ def video_quiz_items(video_type: str) -> list:
             {"id": _item_id(), "kind": "letter", "prompt": l}
             for l in random.sample(["A", "B", "C", "D", "E"], Config.VIDEO_QUIZ_LENGTH)
         ]
+    if video_type == "numbers":
+        return [
+            {"id": _item_id(), "kind": "number", "prompt": n}
+            for n in random.sample(["1", "2", "3", "4", "5"], Config.VIDEO_QUIZ_LENGTH)
+        ]
+    # 'words' (or any future spelling video): quiz on whole-word fingerspelling.
+    words = get_dictionary().all()
+    chosen = random.sample(words, min(Config.VIDEO_QUIZ_LENGTH, len(words))) if words else []
     return [
-        {"id": _item_id(), "kind": "number", "prompt": n}
-        for n in random.sample(["1", "2", "3", "4", "5"], Config.VIDEO_QUIZ_LENGTH)
+        {"id": _item_id(), "kind": "word", "prompt": w["english"].upper()}
+        for w in chosen
     ]
