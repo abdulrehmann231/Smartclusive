@@ -11,7 +11,18 @@ import type {
   Video,
 } from './types'
 
-const API_BASE = (import.meta.env.VITE_API_URL || '').replace(/\/$/, '')
+function inferApiBase(): string {
+  const env = (import.meta.env.VITE_API_URL || '').replace(/\/$/, '')
+  if (env) return env
+  // Inside the Daytona preview proxy, the frontend runs on port 5173 and the backend on 5000.
+  const host = window.location.hostname
+  if (host.endsWith('.daytonaproxy01.net') && host.startsWith('5173-')) {
+    return `https://5000-${host.slice(5)}`
+  }
+  return ''
+}
+
+const API_BASE = inferApiBase()
 
 function token() {
   return localStorage.getItem('sc.token') || ''

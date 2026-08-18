@@ -13,7 +13,17 @@ export interface SignSession {
   stop(): void
 }
 
-const API_BASE = (import.meta.env.VITE_API_URL || '').replace(/\/$/, '')
+function inferApiBase(): string {
+  const env = (import.meta.env.VITE_API_URL || '').replace(/\/$/, '')
+  if (env) return env
+  const host = window.location.hostname
+  if (host.endsWith('.daytonaproxy01.net') && host.startsWith('5173-')) {
+    return `https://5000-${host.slice(5)}`
+  }
+  return ''
+}
+
+const API_BASE = inferApiBase()
 
 function token() {
   return localStorage.getItem('sc.token') || ''
