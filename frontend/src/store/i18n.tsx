@@ -97,6 +97,8 @@ const DICT: Dict = {
   'cards.eyebrow': { id: 'Fitur 1 · Kartu Kata', en: 'Feature 1 · Word Cards' },
   'cards.title': { id: 'Tebak & Isyaratkan', en: 'Guess & Sign' },
   'cards.prompt': { id: 'Apa arti kata Indonesia ini?', en: 'What does this Indonesian word mean?' },
+  'cards.indonesianLabel': { id: 'Bahasa Indonesia', en: 'Indonesian' },
+  'cards.englishOptions': { id: 'Pilih arti dalam Bahasa Inggris:', en: 'Choose the English meaning:' },
   'cards.tryAgain': { id: 'Coba lagi — pilih opsi lain.', en: 'Try again — pick another option.' },
   'cards.correct': { id: 'Benar! Sekarang isyaratkan katanya.', en: 'Correct! Now sign the word.' },
   'cards.addedDeck': { id: '“{word}” ditambahkan ke koleksi!', en: '“{word}” added to your deck!' },
