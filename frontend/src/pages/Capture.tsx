@@ -83,6 +83,9 @@ export function Capture() {
           <div className="center">
             {photo && <img className="thumb" src={photo} alt="foto" style={{ aspectRatio: '4/3' }} />}
             <Alert kind="error">{t('cap.notFound')}</Alert>
+            <p className="muted" style={{ maxWidth: 320, margin: '12px auto 20px' }}>
+              {t('cap.notClassifiedHint')}
+            </p>
             <button className="btn btn--primary" onClick={reset}>{t('cap.retake')}</button>
           </div>
         )}
