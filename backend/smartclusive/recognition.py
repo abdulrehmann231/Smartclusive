@@ -70,6 +70,84 @@ def normalize_landmarks(pts: List[List[float]]) -> List[float]:
     return pts.flatten().tolist()
 
 
+def compute_palm_features(pts: List[List[float]]) -> List[float]:
+    """Compute palm orientation and finger geometry features.
+    
+    Landmark indices (MediaPipe):
+      0: wrist
+      1-4: thumb (CMC, MCP, IP, Tip)
+      5-8: index (MCP, PIP, DIP, Tip)
+      9-12: middle (MCP, PIP, DIP, Tip)
+      13-16: ring (MCP, PIP, DIP, Tip)
+      17-20: pinky (MCP, PIP, DIP, Tip)
+    """
+    np = _import_np()
+    pts = np.asarray(pts, dtype=np.float32)
+    
+    wrist = pts[0]
+    index_mcp = pts[5]
+    middle_mcp = pts[9]
+    ring_mcp = pts[13]
+    pinky_mcp = pts[17]
+    
+    # Palm normal: cross product of wrist->index_mcp and wrist->pinky_mcp
+    v1 = index_mcp - wrist
+    v2 = pinky_mcp - wrist
+    palm_normal = np.cross(v1, v2)
+    palm_norm = np.linalg.norm(palm_normal)
+    if palm_norm > 1e-6:
+        palm_normal /= palm_norm
+    
+    # Palm features (3): normal vector direction
+    palm_fx, palm_fy, palm_fz = palm_normal.tolist()
+    
+    # Palm angle: angle between palm normal and z-axis (camera direction)
+    palm_angle = abs(palm_fz)  # 1 = facing camera, 0 = facing sideways
+    
+    # Finger curl: distance from fingertip to MCP / distance from MCP to wrist
+    # Higher = more curled
+    def finger_curl(tip_idx, mcp_idx):
+        tip = pts[tip_idx]
+        mcp = pts[mcp_idx]
+        tip_dist = np.linalg.norm(tip - mcp)
+        mcp_dist = np.linalg.norm(mcp - wrist)
+        if mcp_dist < 1e-6:
+            return 0.0
+        return float(tip_dist / mcp_dist)
+    
+    thumb_curl = finger_curl(4, 2)   # thumb tip to thumb MCP
+    index_curl = finger_curl(8, 5)
+    middle_curl = finger_curl(12, 9)
+    ring_curl = finger_curl(16, 13)
+    pinky_curl = finger_curl(20, 17)
+    
+    # Thumb position relative to index: helps distinguish S (thumb across) from A (thumb side)
+    thumb_tip = pts[4]
+    index_mcp = pts[5]
+    thumb_to_index = thumb_tip - index_mcp
+    thumb_x = float(thumb_to_index[0])  # negative = thumb is to the right (for right hand)
+    thumb_y = float(thumb_to_index[1])  # negative = thumb is above index MCP
+    
+    # Finger spread: angle between adjacent fingers
+    def finger_spread(mcp1_idx, mcp2_idx):
+        v1 = pts[mcp1_idx] - wrist
+        v2 = pts[mcp2_idx] - wrist
+        cos_angle = np.dot(v1, v2) / (np.linalg.norm(v1) * np.linalg.norm(v2) + 1e-6)
+        return float(np.clip(cos_angle, -1, 1))
+    
+    spread_index_middle = finger_spread(5, 9)
+    spread_middle_ring = finger_spread(9, 13)
+    spread_ring_pinky = finger_spread(13, 17)
+    
+    return [
+        palm_fx, palm_fy, palm_fz,  # palm normal direction (3)
+        palm_angle,                   # palm facing camera (1)
+        thumb_curl, index_curl, middle_curl, ring_curl, pinky_curl,  # finger curl (5)
+        thumb_x, thumb_y,            # thumb position relative to index (2)
+        spread_index_middle, spread_middle_ring, spread_ring_pinky,  # finger spread (3)
+    ]
+
+
 def _cosine_similarity(a, b) -> float:
     np = _import_np()
     a = np.asarray(a, dtype=np.float32)
@@ -118,7 +196,7 @@ class ASLRecognizer:
         self.classes = [chr(ord("A") + i) for i in range(26)] + [str(i) for i in range(10)]
         rng = random.Random(42)
         for label in self.classes:
-            vec = [rng.uniform(-1, 1) for _ in range(63)]
+            vec = [rng.uniform(-1, 1) for _ in range(77)]  # 63 landmarks + 14 palm features
             norm = math.sqrt(sum(v * v for v in vec))
             if norm > 0:
                 vec = [v / norm for v in vec]
@@ -126,7 +204,17 @@ class ASLRecognizer:
         self.mode = "demo"
 
     def extract_landmarks(self, image_bytes: bytes) -> Optional[List[float]]:
-        """Run MediaPipe Hands on a frame and return a normalized 63-D feature vector."""
+        """Run MediaPipe Hands on a frame and return a normalized 77-D feature vector.
+        
+        Features (77 total):
+          - 63: normalized landmark coordinates (21 points × 3)
+          - 14: palm orientation and geometry features
+            - palm_normal (3): direction of palm surface
+            - palm_angle (1): how much palm faces camera
+            - finger_curl (5): curl amount per finger
+            - thumb_position (2): thumb tip relative to index MCP
+            - finger_spread (3): angles between adjacent fingers
+        """
         try:
             cv2 = _import_cv()
             np = _import_np()
@@ -154,7 +242,14 @@ class ASLRecognizer:
                 if handed == "Left":
                     for p in pts:
                         p[0] = -p[0]
-                return normalize_landmarks(pts)
+                
+                # Base 63-D normalized landmarks
+                base_features = normalize_landmarks(pts)
+                
+                # Extended 10-D palm features
+                palm_features = compute_palm_features(pts)
+                
+                return base_features + palm_features
         except Exception as exc:
             print(f"[recognition] MediaPipe processing failed: {exc}")
             return None

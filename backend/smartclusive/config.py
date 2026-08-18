@@ -17,10 +17,10 @@ class Config:
 
     # ASL recognizer assets (produced by train_asl_landmarks.ipynb)
     ASL_MODEL_PATH = os.environ.get(
-        "ASL_MODEL_PATH", os.path.join(DATA_DIR, "asl_landmark_model.joblib")
+        "ASL_MODEL_PATH", os.path.join(DATA_DIR, "asl_landmark_model_v2.joblib")
     )
     ASL_LABELS_PATH = os.environ.get(
-        "ASL_LABELS_PATH", os.path.join(DATA_DIR, "labels.json")
+        "ASL_LABELS_PATH", os.path.join(DATA_DIR, "labels_v2.json")
     )
     ASL_TEMPLATES_PATH = os.environ.get(
         "ASL_TEMPLATES_PATH", os.path.join(DATA_DIR, "asl_templates.json")
