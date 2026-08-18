@@ -29,7 +29,7 @@ Create a new **Web Service** in Render:
 |---|---|
 | Root directory | `backend` |
 | Runtime | `Python 3` |
-| Build command | `pip install -r requirements.txt && python scripts/generate_lesson_videos.py` |
+| Build command | `pip install --upgrade pip setuptools wheel && pip install -r requirements.txt && python scripts/generate_lesson_videos.py` |
 | Start command | `gunicorn -w 2 -b 0.0.0.0:$PORT app:app` |
 
 Add environment variables:
@@ -102,6 +102,18 @@ PYTHON_VERSION=3.11
 ```
 
 Then redeploy.
+
+### `HTTPSConnectionPool ... too many 502 error responses`
+
+This is a transient PyPI/network error on Render's side. The build command now upgrades `pip` first, which usually helps. If it still fails:
+
+1. Click **Manual Deploy → Deploy latest commit** in Render to retry.
+2. If it persists, set a longer timeout or use a different PyPI mirror by adding this env var:
+   ```
+   PIP_INDEX_URL=https://pypi.org/simple
+   PIP_TRUSTED_HOST=pypi.org files.pythonhosted.org
+   ```
+3. Retry the deploy.
 
 ## Production notes
 
