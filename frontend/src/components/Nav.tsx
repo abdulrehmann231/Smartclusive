@@ -2,6 +2,7 @@ import { NavLink, useNavigate } from 'react-router-dom'
 import { useAuth } from '../store/auth'
 import { useI18n } from '../store/i18n'
 import { LangSwitcher } from './LangSwitcher'
+import { ThemeToggle } from './ThemeToggle'
 import { Mascot } from './Mascot'
 
 const LINKS = [
@@ -70,6 +71,8 @@ export function Nav() {
               {t('nav.signin')}
             </NavLink>
           )}
+          {/* Light / dark theme toggle */}
+          <ThemeToggle />
           {/* Translation feature: Indonesian / English toggle, top-right of the nav */}
           <LangSwitcher />
         </div>

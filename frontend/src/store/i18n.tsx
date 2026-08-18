@@ -50,6 +50,10 @@ const DICT: Dict = {
   'common.start': { id: 'Mulai', en: 'Start' },
   'common.startLearning': { id: 'Mulai Belajar', en: 'Start Learning' },
 
+  // Theme toggle
+  'theme.toDark': { id: 'Mode gelap', en: 'Dark mode' },
+  'theme.toLight': { id: 'Mode terang', en: 'Light mode' },
+
   // Dashboard
   'dash.welcome': { id: 'Selamat datang', en: 'Welcome' },
   'dash.hi': { id: 'Halo, {name} 👋', en: 'Hi, {name} 👋' },

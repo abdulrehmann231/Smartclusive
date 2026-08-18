@@ -3,7 +3,6 @@ import { useI18n } from '../store/i18n'
 import { Mascot } from '../components/Mascot'
 
 // Public, pre-login landing — Brilliant-style hero with the animated mascot.
-// Rendered in handwriting-font mode (see FontMode).
 export function Landing() {
   const { t } = useI18n()
   return (
