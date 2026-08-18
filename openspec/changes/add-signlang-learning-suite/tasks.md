@@ -23,8 +23,9 @@
 ## 4. ASL recognition capability (shared — letters + numbers)
 
 - [ ] 4.1 Add camera-consent gate before capture
-- [ ] 4.2 Extract + normalize MediaPipe Hands landmarks; assemble A–Z+0–9 training data from the datasets in `design.md` (36-class comprehensive or Massey set, + the rayeed045 digit set, + grassknoted for letters) + a few self-recorded samples; ASL-only (skip BSL/Turkish sets)
-- [ ] 4.3 Train the small landmark classifier (MLP/SVM) covering A–Z and 0–9; keep a KNN/template matcher as the zero-data bootstrap + offline fallback
+- [ ] 4.2 Build the A–Z+0–9 landmark training CSV: merge the chosen sets (srisahithis letters + rayeed045 digits, both already MediaPipe keypoints); normalize (wrist-origin, scale-invariant). ASL-only (skip BSL/Turkish sets). No self-recorded data required
+- [ ] 4.3 Train the small classifier via `train_asl_landmarks.ipynb` (Colab) → export `asl_landmark_model.joblib` + `labels.json`; keep a KNN/template matcher as the zero-training offline fallback
+- [ ] 4.3a (Optional, only if accuracy is low) capture a few own samples per sign via a small webcam→MediaPipe→CSV script, or an in-app per-user calibration, and retrain
 - [ ] 4.4 Implement single-letter and single-number match reporting against an expected target; disambiguate letter/number handshape overlaps by mode
 - [ ] 4.5 Implement the letter-by-letter word verifier state machine with consecutive-frame stability
 - [ ] 4.6 Support multi-digit numbers as ordered digit sequences reusing the verifier (e.g. 25 → 2,5), with a "spell the number digit by digit" label
