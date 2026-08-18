@@ -58,6 +58,8 @@ Smartclusive makes English vocabulary acquisition accessible through visual and 
 
 The backend runs on port 5000 by default.
 
+The backend serves lesson videos from `backend/static/`. Placeholder MP4 files are generated automatically for development; replace `letters.mp4` and `numbers.mp4` with real ASL lesson videos when available.
+
 ### Frontend
 
 1. Navigate to the frontend folder:
