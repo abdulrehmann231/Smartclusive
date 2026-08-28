@@ -40,11 +40,16 @@
   --shadow-sm: 0 6px 18px rgba(20, 90, 120, 0.12);
   --shadow-pop: 0 8px 0 rgba(20, 120, 160, 0.22);
 
-  /* Font system — Brilliant-style:
-     - display: expressive serif for big headings (Fraunces)
-     - body:    clean humanist sans for UI/text (Inter) */
-  --font-display: "Fraunces", Georgia, "Times New Roman", serif;
-  --font-body: "Inter", "Segoe UI", system-ui, -apple-system, sans-serif;
+  /* Font system — matched to Brilliant.org.
+     Brilliant sets everything in its bespoke geometric sans "coFoBrilliantFont"
+     (headings + body) and uses the serif "coFoRobertFont" only as an accent.
+     We mirror that with TikTok Sans (same foundry, free) → Poppins → Inter:
+     - body:    geometric sans for all UI/text (Brilliant's dominant look)
+     - display: same geometric sans, heavier weight, for headings
+     - serif:   Fraunces, an optional editorial accent (mirrors coFoRobertFont) */
+  --font-body: "TikTok Sans", "Poppins", "Inter", "Segoe UI", system-ui, -apple-system, sans-serif;
+  --font-display: var(--font-body);
+  --font-serif: "Fraunces", Georgia, "Times New Roman", serif;
   --font: var(--font-body);
 }
 
@@ -99,16 +104,18 @@ body {
 a { color: var(--brand-700); text-decoration: none; }
 a:hover { text-decoration: underline; }
 
-/* Brilliant-style: expressive serif headings, clean sans everywhere else.
-   Applied in both logged-out and logged-in states. */
+/* Brilliant.org look: bold geometric-sans headings with tight tracking,
+   the same clean sans for body. Applied logged-out and logged-in. */
 h1, h2, h3 {
   line-height: 1.12;
   margin: 0 0 0.4em;
   font-family: var(--font-display);
-  font-weight: 600;
-  letter-spacing: -0.01em;
+  font-weight: 700;
+  letter-spacing: -0.02em;
 }
-.hero h1, .landing__title, .page-head h1 { font-family: var(--font-display); font-weight: 600; }
+.hero h1, .landing__title, .page-head h1 { font-family: var(--font-display); font-weight: 700; letter-spacing: -0.025em; }
+/* Optional editorial serif accent, mirroring Brilliant's coFoRobertFont. */
+.serif { font-family: var(--font-serif); font-weight: 500; letter-spacing: 0; }
 /* Wordmark, buttons, eyebrows and small UI stay in the sans for a crisp feel. */
 .brand__name, .btn, .eyebrow, .pill, .nav__link { font-family: var(--font-body); }
 
