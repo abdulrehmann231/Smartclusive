@@ -81,6 +81,10 @@ export const api = {
     return request('POST', '/api/auth/login', { email, password })
   },
 
+  async resetPassword(email: string, password: string): Promise<AuthResult> {
+    return request('POST', '/api/auth/reset-password', { email, password })
+  },
+
   async logout(): Promise<void> {
     await request('POST', '/api/auth/logout', undefined)
   },

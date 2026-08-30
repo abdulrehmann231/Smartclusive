@@ -8,6 +8,7 @@ interface AuthState {
   loading: boolean
   login: (email: string, password: string) => Promise<void>
   register: (name: string, email: string, password: string) => Promise<void>
+  resetPassword: (email: string, password: string) => Promise<void>
   logout: () => Promise<void>
 }
 
@@ -61,6 +62,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       },
       async register(name, email, password) {
         const res = await api.register(name, email, password)
+        persist(res.token, res.student)
+      },
+      async resetPassword(email, password) {
+        const res = await api.resetPassword(email, password)
         persist(res.token, res.student)
       },
       async logout() {

@@ -4,7 +4,7 @@ import { I18nProvider, useI18n } from './store/i18n'
 import { ThemeProvider } from './store/theme'
 import { Nav } from './components/Nav'
 import { Landing } from './pages/Landing'
-import { Login, Register } from './pages/Auth'
+import { ForgotPassword, Login, Register } from './pages/Auth'
 import { Dashboard } from './pages/Dashboard'
 import { Cards } from './pages/Cards'
 import { Capture } from './pages/Capture'
@@ -48,6 +48,7 @@ export default function App() {
           <Routes>
             <Route path="/login" element={<Login />} />
             <Route path="/register" element={<Register />} />
+            <Route path="/forgot-password" element={<ForgotPassword />} />
             <Route path="/" element={<Home />} />
             <Route path="/learn/cards" element={guard(<Cards />)} />
             <Route path="/learn/capture" element={guard(<Capture />)} />

@@ -100,6 +100,11 @@ function AuthForm({ mode }: { mode: 'login' | 'register' }) {
             placeholder="••••••••"
           />
           {errors.password && <div className="field__error">{errors.password}</div>}
+          {!isRegister && (
+            <div className="mt" style={{ fontSize: 14 }}>
+              <Link to="/forgot-password">{t('auth.forgot')}</Link>
+            </div>
+          )}
         </div>
 
         <button className="btn btn--primary btn--block mt" disabled={busy}>
@@ -127,4 +132,106 @@ export function Login() {
 }
 export function Register() {
   return <AuthForm mode="register" />
+}
+
+export function ForgotPassword() {
+  const { resetPassword } = useAuth()
+  const { t } = useI18n()
+  const navigate = useNavigate()
+
+  const [email, setEmail] = useState('')
+  const [password, setPassword] = useState('')
+  const [confirm, setConfirm] = useState('')
+  const [errors, setErrors] = useState<{ email?: string; password?: string; confirm?: string }>({})
+  const [formError, setFormError] = useState('')
+  const [busy, setBusy] = useState(false)
+
+  function validate() {
+    const e: typeof errors = {}
+    if (!validEmail(email)) e.email = t('auth.errEmail')
+    if (!password) e.password = t('auth.errPassword')
+    else if (password.length < 6) e.password = t('auth.errPasswordShort')
+    if (confirm !== password) e.confirm = t('auth.errPasswordMismatch')
+    setErrors(e)
+    return Object.keys(e).length === 0
+  }
+
+  async function onSubmit(ev: React.FormEvent) {
+    ev.preventDefault()
+    setFormError('')
+    if (!validate()) return
+    setBusy(true)
+    try {
+      await resetPassword(email, password)
+      navigate('/', { replace: true })
+    } catch (err: any) {
+      if (err?.error === 'email_not_found') setFormError(t('auth.errEmailNotFound'))
+      else setFormError(t('auth.errGeneric'))
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  return (
+    <div className="page page--narrow">
+      <div className="center anim-up" style={{ marginBottom: 18 }}>
+        <div style={{ marginBottom: 6 }}>
+          <Mascot size={92} float />
+        </div>
+        <h1 style={{ marginBottom: 4 }}>{t('auth.forgot.title')}</h1>
+        <p className="muted">{t('auth.forgot.subtitle')}</p>
+      </div>
+
+      <form className="card card--pad-lg" onSubmit={onSubmit} noValidate>
+        {formError && <Alert kind="error">{formError}</Alert>}
+
+        <div className="field">
+          <label htmlFor="fp-email">{t('auth.email')}</label>
+          <input
+            id="fp-email"
+            type="email"
+            className={'input' + (errors.email ? ' input--error' : '')}
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            placeholder={t('auth.emailPlaceholder')}
+          />
+          {errors.email && <div className="field__error">{errors.email}</div>}
+        </div>
+
+        <div className="field">
+          <label htmlFor="fp-password">{t('auth.newPassword')}</label>
+          <input
+            id="fp-password"
+            type="password"
+            className={'input' + (errors.password ? ' input--error' : '')}
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            placeholder="••••••••"
+          />
+          {errors.password && <div className="field__error">{errors.password}</div>}
+        </div>
+
+        <div className="field">
+          <label htmlFor="fp-confirm">{t('auth.confirmPassword')}</label>
+          <input
+            id="fp-confirm"
+            type="password"
+            className={'input' + (errors.confirm ? ' input--error' : '')}
+            value={confirm}
+            onChange={(e) => setConfirm(e.target.value)}
+            placeholder="••••••••"
+          />
+          {errors.confirm && <div className="field__error">{errors.confirm}</div>}
+        </div>
+
+        <button className="btn btn--primary btn--block mt" disabled={busy}>
+          {busy ? t('auth.processing') : t('auth.forgot.btn')}
+        </button>
+
+        <p className="center mt muted" style={{ fontSize: 14 }}>
+          <Link to="/login">{t('auth.backToSignin')}</Link>
+        </p>
+      </form>
+    </div>
+  )
 }

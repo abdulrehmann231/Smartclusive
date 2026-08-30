@@ -63,6 +63,39 @@ def test_register_and_login(client):
     assert r.status_code == 200
 
 
+def test_reset_password(client):
+    old_token = _auth(client, email="reset@example.com")
+
+    # Unknown email is rejected.
+    r = client.post(
+        "/api/auth/reset-password",
+        json={"email": "nobody@example.com", "password": "newpass"},
+    )
+    assert r.status_code == 404
+    assert r.get_json()["error"] == "email_not_found"
+
+    r = client.post(
+        "/api/auth/reset-password",
+        json={"email": "reset@example.com", "password": "newpass"},
+    )
+    assert r.status_code == 200
+    new_token = r.get_json()["token"]
+
+    # The reset invalidates the previous session but signs the student in again.
+    assert client.get("/api/auth/me", headers={"Authorization": f"Bearer {old_token}"}).status_code == 401
+    assert client.get("/api/auth/me", headers={"Authorization": f"Bearer {new_token}"}).status_code == 200
+
+    # Only the new password works.
+    r = client.post(
+        "/api/auth/login", json={"email": "reset@example.com", "password": "secret123"}
+    )
+    assert r.status_code == 401
+    r = client.post(
+        "/api/auth/login", json={"email": "reset@example.com", "password": "newpass"}
+    )
+    assert r.status_code == 200
+
+
 def test_me_requires_auth(client):
     assert client.get("/api/auth/me").status_code == 401
     token = _auth(client)

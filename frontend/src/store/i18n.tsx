@@ -40,6 +40,27 @@ const DICT: Dict = {
   'auth.haveAccount': { id: 'Sudah punya akun?', en: 'Already have an account?' },
   'auth.noAccount': { id: 'Belum punya akun?', en: "Don't have an account?" },
 
+  // Forgot password
+  'auth.forgot': { id: 'Lupa kata sandi?', en: 'Forgot password?' },
+  'auth.forgot.title': { id: 'Atur Ulang Kata Sandi', en: 'Reset Password' },
+  'auth.forgot.subtitle': {
+    id: 'Masukkan email akunmu dan kata sandi baru.',
+    en: 'Enter your account email and a new password.',
+  },
+  'auth.newPassword': { id: 'Kata Sandi Baru', en: 'New Password' },
+  'auth.confirmPassword': { id: 'Ulangi Kata Sandi Baru', en: 'Confirm New Password' },
+  'auth.forgot.btn': { id: 'Atur Ulang Kata Sandi', en: 'Reset Password' },
+  'auth.errPasswordShort': {
+    id: 'Kata sandi minimal 6 karakter.',
+    en: 'Password must be at least 6 characters.',
+  },
+  'auth.errPasswordMismatch': { id: 'Kata sandi tidak cocok.', en: 'Passwords do not match.' },
+  'auth.errEmailNotFound': {
+    id: 'Email tidak terdaftar.',
+    en: 'That email is not registered.',
+  },
+  'auth.backToSignin': { id: 'Kembali ke Masuk', en: 'Back to sign in' },
+
   // Common
   'common.loading': { id: 'Memuat…', en: 'Loading…' },
   'common.error': { id: 'Terjadi kesalahan', en: 'Something went wrong' },

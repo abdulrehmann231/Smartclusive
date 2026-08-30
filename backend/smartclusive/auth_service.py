@@ -41,6 +41,21 @@ def login_student(email: str, password: str) -> tuple:
     return {"token": token.token, "student": student.to_dict()}, None
 
 
+def reset_password(email: str, password: str) -> tuple:
+    """Reset a password from the email alone (no verification mail in this build)."""
+    email = email.lower().strip()
+    student = Student.query.filter_by(email=email).first()
+    if student is None:
+        return None, "email_not_found"
+    student.password_hash = _hash(password)
+    # Drop every existing session so old logins cannot outlive the reset.
+    AuthToken.query.filter_by(student_id=student.id).delete()
+    token = AuthToken(token=_new_token(), student_id=student.id)
+    db.session.add(token)
+    db.session.commit()
+    return {"token": token.token, "student": student.to_dict()}, None
+
+
 def logout_student(token: str) -> None:
     if not token:
         return

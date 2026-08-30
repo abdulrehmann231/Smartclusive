@@ -10,6 +10,7 @@ from smartclusive.auth_service import (
     logout_student,
     register_student,
     require_student,
+    reset_password,
 )
 from smartclusive.config import Config
 from smartclusive.deck_service import add_to_deck, eligible_words, get_deck
@@ -53,6 +54,19 @@ def login():
     result, err = login_student(email, password)
     if err:
         return jsonify({"error": err}), 401
+    return jsonify(result), 200
+
+
+@api_bp.route("/auth/reset-password", methods=["POST"])
+def reset_password_route():
+    data = request.get_json(silent=True) or {}
+    email = data.get("email", "").strip()
+    password = data.get("password", "")
+    if not email or not password:
+        return jsonify({"error": "missing_fields"}), 400
+    result, err = reset_password(email, password)
+    if err:
+        return jsonify({"error": err}), 404
     return jsonify(result), 200
 
 
