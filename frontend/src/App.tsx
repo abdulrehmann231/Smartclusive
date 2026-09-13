@@ -1,24 +1,31 @@
+import { lazy, Suspense } from 'react'
 import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom'
 import { AuthProvider, RequireAuth, useAuth } from './store/auth'
 import { I18nProvider, useI18n } from './store/i18n'
 import { ThemeProvider } from './store/theme'
 import { Nav } from './components/Nav'
+import { ErrorBoundary } from './components/ErrorBoundary'
 import { Landing } from './pages/Landing'
 import { ForgotPassword, Login, Register } from './pages/Auth'
 import { Dashboard } from './pages/Dashboard'
-import { Cards } from './pages/Cards'
-import { Capture } from './pages/Capture'
-import { Quiz } from './pages/Quiz'
-import { Videos } from './pages/Videos'
-import { Deck } from './pages/Deck'
-import { Translate } from './pages/Translate'
+
+const Cards = lazy(() => import('./pages/Cards').then((m) => ({ default: m.Cards })))
+const Capture = lazy(() => import('./pages/Capture').then((m) => ({ default: m.Capture })))
+const Quiz = lazy(() => import('./pages/Quiz').then((m) => ({ default: m.Quiz })))
+const Videos = lazy(() => import('./pages/Videos').then((m) => ({ default: m.Videos })))
+const Deck = lazy(() => import('./pages/Deck').then((m) => ({ default: m.Deck })))
+const Translate = lazy(() => import('./pages/Translate').then((m) => ({ default: m.Translate })))
+
+function PageLoader() {
+  return <div className="state"><div className="spinner" /></div>
+}
 
 function Shell({ children }: { children: React.ReactNode }) {
   const { t } = useI18n()
   return (
     <div className="app">
       <Nav />
-      {children}
+      <main>{children}</main>
       <footer className="footer">
         <div className="footer__inner">
           <span>{t('footer.copy')}</span>
@@ -44,7 +51,9 @@ export default function App() {
       <ThemeProvider>
       <I18nProvider>
       <AuthProvider>
+        <ErrorBoundary>
         <Shell>
+          <Suspense fallback={<PageLoader />}>
           <Routes>
             <Route path="/login" element={<Login />} />
             <Route path="/register" element={<Register />} />
@@ -58,7 +67,9 @@ export default function App() {
             <Route path="/translate" element={guard(<Translate />)} />
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
+          </Suspense>
         </Shell>
+        </ErrorBoundary>
       </AuthProvider>
       </I18nProvider>
       </ThemeProvider>

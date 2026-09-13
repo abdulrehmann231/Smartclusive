@@ -1,4 +1,5 @@
 import type { SignKind } from '../api/types'
+import { request } from '../api/http'
 
 export interface SignProgress {
   matched: string[]
@@ -11,43 +12,6 @@ export interface SignSession {
   state(): SignProgress
   sendFrame(imageDataUrl: string): Promise<SignProgress>
   stop(): void
-}
-
-function inferApiBase(): string {
-  const env = (import.meta.env.VITE_API_URL || '').replace(/\/$/, '')
-  if (env) return env
-  const host = window.location.hostname
-  if (host.endsWith('.daytonaproxy01.net') && host.startsWith('5173-')) {
-    return `https://5000-${host.slice(5)}`
-  }
-  return ''
-}
-
-const API_BASE = inferApiBase()
-
-function token() {
-  return localStorage.getItem('sc.token') || ''
-}
-
-async function request<T>(method: string, path: string, body?: unknown): Promise<T> {
-  const url = `${API_BASE}${path}`
-  const headers: Record<string, string> = {
-    Authorization: `Bearer ${token()}`,
-    'Content-Type': 'application/json',
-    // Skip ngrok's free-tier browser-warning interstitial, which is returned
-    // without CORS headers and otherwise surfaces as a "CORS error" in the browser.
-    'ngrok-skip-browser-warning': 'true',
-  }
-  const res = await fetch(url, {
-    method,
-    headers,
-    body: body === undefined ? undefined : JSON.stringify(body),
-  })
-  const data = await res.json().catch(() => ({}))
-  if (!res.ok) {
-    throw { status: res.status, error: data.error || 'unknown' }
-  }
-  return data as T
 }
 
 function stripDataUrlPrefix(dataUrl: string): string {

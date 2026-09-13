@@ -1,4 +1,7 @@
+import logging
 import os
+
+logger = logging.getLogger(__name__)
 
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 DATA_DIR = os.path.join(BASE_DIR, "data")
@@ -9,7 +12,13 @@ for d in (DATA_DIR, STATIC_DIR):
 
 
 class Config:
-    SECRET_KEY = os.environ.get("SECRET_KEY", "dev-secret-change-me")
+    _secret = os.environ.get("SECRET_KEY", "")
+    if not _secret:
+        if os.environ.get("FLASK_ENV") == "production" or os.environ.get("RENDER"):
+            raise RuntimeError("SECRET_KEY must be set in production")
+        _secret = "dev-secret-change-me"
+        logger.warning("Using default SECRET_KEY; set SECRET_KEY env var in production")
+    SECRET_KEY = _secret
     SQLALCHEMY_DATABASE_URI = os.environ.get(
         "DATABASE_URL", f"sqlite:///{os.path.join(DATA_DIR, 'smartclusive.db')}"
     )

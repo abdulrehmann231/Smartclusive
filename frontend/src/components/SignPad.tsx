@@ -98,7 +98,7 @@ export function SignPad({ target, kind, onComplete, onCancel }: Props) {
     <div>
       <CameraView active onCapture={handleCapture} captureSignal={captureSignal} />
 
-      <div className="signpad__target">
+      <div className="signpad__target" role="status" aria-live="polite">
         {units.map((u, i) => {
           const matched = i < progress.matched.length
           const expected = i === progress.matched.length && !progress.complete

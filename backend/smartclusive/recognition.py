@@ -1,6 +1,7 @@
 import base64
 import io
 import json
+import logging
 import math
 import os
 import random
@@ -8,6 +9,8 @@ import secrets
 from typing import Dict, List, Optional, Tuple
 
 from smartclusive.config import Config
+
+logger = logging.getLogger(__name__)
 
 # Heavy CV/ML imports are deferred so the API can start even when they are not installed.
 _cv = None
@@ -181,7 +184,7 @@ class ASLRecognizer:
                 self.mode = "model"
                 return
             except Exception as exc:  # pragma: no cover
-                print(f"[recognition] failed to load trained model: {exc}")
+                logger.warning("failed to load trained model: %s", exc)
 
         # 2. Try user-supplied KNN templates.
         if os.path.exists(Config.ASL_TEMPLATES_PATH):
@@ -192,10 +195,10 @@ class ASLRecognizer:
                 self.mode = "knn"
                 return
             except Exception as exc:  # pragma: no cover
-                print(f"[recognition] failed to load templates: {exc}")
+                logger.warning("failed to load templates: %s", exc)
 
         # 3. Deterministic synthetic templates so the API never crashes.
-        print("[recognition] no model/templates found; using deterministic demo recognizer")
+        logger.info("no model/templates found; using deterministic demo recognizer")
         self.classes = [chr(ord("A") + i) for i in range(26)] + [str(i) for i in range(10)]
         rng = random.Random(42)
         for label in self.classes:
@@ -243,7 +246,7 @@ class ASLRecognizer:
             np = _import_np()
             arr = cv2.imdecode(np.frombuffer(image_bytes, np.uint8), cv2.IMREAD_COLOR)
         except Exception as exc:
-            print(f"[recognition] extraction failed: {exc}")
+            logger.warning("extraction failed: %s", exc)
             return None
 
         if arr is None:
@@ -280,7 +283,7 @@ class ASLRecognizer:
 
             return base_features + palm_features
         except Exception as exc:
-            print(f"[recognition] MediaPipe processing failed: {exc}")
+            logger.warning("MediaPipe processing failed: %s", exc)
             return None
 
     def predict(self, feature: List[float], restrict_to: Optional[List[str]] = None) -> List[Tuple[str, float]]:

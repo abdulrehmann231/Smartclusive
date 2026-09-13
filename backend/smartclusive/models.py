@@ -4,6 +4,8 @@ from flask_sqlalchemy import SQLAlchemy
 
 db = SQLAlchemy()
 
+_utcnow = lambda: datetime.datetime.now(datetime.timezone.utc)
+
 
 def _uuid() -> str:
     return uuid.uuid4().hex
@@ -15,7 +17,7 @@ class Student(db.Model):
     name = db.Column(db.String(120), nullable=False)
     email = db.Column(db.String(120), unique=True, nullable=False, index=True)
     password_hash = db.Column(db.String(256), nullable=False)
-    created_at = db.Column(db.DateTime, default=datetime.datetime.utcnow)
+    created_at = db.Column(db.DateTime, default=_utcnow)
 
     deck = db.relationship("DeckWord", backref="student", lazy="dynamic", cascade="all, delete-orphan")
     tokens = db.relationship("AuthToken", backref="student", lazy="dynamic", cascade="all, delete-orphan")
@@ -29,7 +31,7 @@ class AuthToken(db.Model):
     __tablename__ = "auth_tokens"
     token = db.Column(db.String(64), primary_key=True)
     student_id = db.Column(db.String(32), db.ForeignKey("students.id"), nullable=False, index=True)
-    created_at = db.Column(db.DateTime, default=datetime.datetime.utcnow)
+    created_at = db.Column(db.DateTime, default=_utcnow)
 
 
 class DeckWord(db.Model):
@@ -40,7 +42,7 @@ class DeckWord(db.Model):
     english = db.Column(db.String(120), nullable=False)
     image = db.Column(db.Text, nullable=False)
     mastery = db.Column(db.Integer, default=0, nullable=False)
-    learned_at = db.Column(db.DateTime, default=datetime.datetime.utcnow)
+    learned_at = db.Column(db.DateTime, default=_utcnow)
 
     __table_args__ = (db.UniqueConstraint("student_id", "english", name="uix_student_word"),)
 

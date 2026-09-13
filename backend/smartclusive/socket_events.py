@@ -1,9 +1,12 @@
 import base64
+import logging
 
 from flask import request
 
 from smartclusive.auth_service import student_from_token
 from smartclusive.recognition import get_sign_sessions
+
+logger = logging.getLogger(__name__)
 
 
 def register_socket(socketio):
@@ -30,7 +33,7 @@ def register_socket(socketio):
         try:
             state = sessions.process_frame(sid, image_bytes)
         except Exception as exc:
-            print(f"[socket_events] sign frame processing failed: {exc}")
+            logger.exception("sign frame processing failed")
             return {"error": "processing_failed"}
         if state is None:
             return {"error": "session_not_found"}

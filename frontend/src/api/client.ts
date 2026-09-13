@@ -1,3 +1,4 @@
+import { request } from './http'
 import type {
   AuthResult,
   Card,
@@ -11,66 +12,6 @@ import type {
   Video,
 } from './types'
 
-function inferApiBase(): string {
-  const env = (import.meta.env.VITE_API_URL || '').replace(/\/$/, '')
-  if (env) return env
-  // Inside the Daytona preview proxy, the frontend runs on port 5173 and the backend on 5000.
-  const host = window.location.hostname
-  if (host.endsWith('.daytonaproxy01.net') && host.startsWith('5173-')) {
-    return `https://5000-${host.slice(5)}`
-  }
-  return ''
-}
-
-const API_BASE = inferApiBase()
-
-function token() {
-  return localStorage.getItem('sc.token') || ''
-}
-
-async function request<T>(
-  method: string,
-  path: string,
-  body?: unknown,
-  options: { multipart?: boolean } = {},
-): Promise<T> {
-  const url = `${API_BASE}${path}`
-  const headers: Record<string, string> = {
-    Authorization: `Bearer ${token()}`,
-    // Skip ngrok's free-tier browser-warning interstitial, which is returned
-    // without CORS headers and otherwise surfaces as a "CORS error" in the browser.
-    'ngrok-skip-browser-warning': 'true',
-  }
-  let fetchBody: BodyInit | undefined
-
-  if (options.multipart) {
-    fetchBody = body as FormData
-  } else if (body !== undefined) {
-    headers['Content-Type'] = 'application/json'
-    fetchBody = JSON.stringify(body)
-  }
-
-  const res = await fetch(url, {
-    method,
-    headers,
-    body: fetchBody,
-  })
-
-  let data: any = {}
-  try {
-    data = await res.json()
-  } catch {
-    data = {}
-  }
-
-  if (!res.ok) {
-    const err: any = { status: res.status, error: data.error || 'unknown' }
-    if (data.needed !== undefined) err.needed = data.needed
-    throw err
-  }
-  return data as T
-}
-
 export const api = {
   // ---------------- Auth ----------------
   async register(name: string, email: string, password: string): Promise<AuthResult> {
@@ -81,8 +22,8 @@ export const api = {
     return request('POST', '/api/auth/login', { email, password })
   },
 
-  async resetPassword(email: string, password: string): Promise<AuthResult> {
-    return request('POST', '/api/auth/reset-password', { email, password })
+  async resetPassword(email: string, oldPassword: string, newPassword: string): Promise<AuthResult> {
+    return request('POST', '/api/auth/reset-password', { email, oldPassword, newPassword })
   },
 
   async logout(): Promise<void> {

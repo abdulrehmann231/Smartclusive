@@ -1,4 +1,5 @@
 import io
+import logging
 import os
 import random
 from typing import Optional, Tuple
@@ -7,6 +8,8 @@ from smartclusive.config import Config
 from smartclusive.dictionary import get_dictionary
 from smartclusive.images import fingerspelling_for, word_image
 from smartclusive.translator import translate_en_to_id
+
+logger = logging.getLogger(__name__)
 
 _yolo = None
 
@@ -24,7 +27,7 @@ def _load_yolo():
         _yolo = YOLO(model_path)
         return _yolo
     except Exception as exc:
-        print(f"[object_detection] YOLO not available: {exc}")
+        logger.warning("YOLO not available: %s", exc)
         _yolo = False
         return None
 
@@ -63,7 +66,7 @@ def _best_yolo_detection(image_bytes: bytes) -> Optional[Tuple[str, float, dict]
         }
         return name, conf, box
     except Exception as exc:
-        print(f"[object_detection] YOLO inference failed: {exc}")
+        logger.warning("YOLO inference failed: %s", exc)
         return None
 
 

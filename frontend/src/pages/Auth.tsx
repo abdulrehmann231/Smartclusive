@@ -140,15 +140,17 @@ export function ForgotPassword() {
   const navigate = useNavigate()
 
   const [email, setEmail] = useState('')
+  const [oldPassword, setOldPassword] = useState('')
   const [password, setPassword] = useState('')
   const [confirm, setConfirm] = useState('')
-  const [errors, setErrors] = useState<{ email?: string; password?: string; confirm?: string }>({})
+  const [errors, setErrors] = useState<{ email?: string; oldPassword?: string; password?: string; confirm?: string }>({})
   const [formError, setFormError] = useState('')
   const [busy, setBusy] = useState(false)
 
   function validate() {
     const e: typeof errors = {}
     if (!validEmail(email)) e.email = t('auth.errEmail')
+    if (!oldPassword) e.oldPassword = t('auth.errPassword')
     if (!password) e.password = t('auth.errPassword')
     else if (password.length < 6) e.password = t('auth.errPasswordShort')
     if (confirm !== password) e.confirm = t('auth.errPasswordMismatch')
@@ -162,10 +164,11 @@ export function ForgotPassword() {
     if (!validate()) return
     setBusy(true)
     try {
-      await resetPassword(email, password)
+      await resetPassword(email, oldPassword, password)
       navigate('/', { replace: true })
     } catch (err: any) {
       if (err?.error === 'email_not_found') setFormError(t('auth.errEmailNotFound'))
+      else if (err?.error === 'invalid_credentials') setFormError(t('auth.errInvalid'))
       else setFormError(t('auth.errGeneric'))
     } finally {
       setBusy(false)
@@ -196,6 +199,19 @@ export function ForgotPassword() {
             placeholder={t('auth.emailPlaceholder')}
           />
           {errors.email && <div className="field__error">{errors.email}</div>}
+        </div>
+
+        <div className="field">
+          <label htmlFor="fp-old-password">{t('auth.oldPassword')}</label>
+          <input
+            id="fp-old-password"
+            type="password"
+            className={'input' + (errors.oldPassword ? ' input--error' : '')}
+            value={oldPassword}
+            onChange={(e) => setOldPassword(e.target.value)}
+            placeholder="••••••••"
+          />
+          {errors.oldPassword && <div className="field__error">{errors.oldPassword}</div>}
         </div>
 
         <div className="field">

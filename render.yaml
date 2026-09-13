@@ -27,7 +27,10 @@ services:
       - key: MIN_DECK_SIZE
         value: "3"
       - key: CORS_ORIGINS
-        value: "*"
+        fromService:
+          name: smartclusive-web
+          type: static
+          property: url
 
   # Static React frontend
   - type: static

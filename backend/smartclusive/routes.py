@@ -1,5 +1,7 @@
 import base64
+import logging
 import random
+import re
 import secrets
 
 from flask import Blueprint, request, jsonify
@@ -22,6 +24,9 @@ from smartclusive.recognition import get_sign_sessions
 from smartclusive.video_service import complete_video, list_videos, record_video_quiz_result
 
 api_bp = Blueprint("api", __name__)
+logger = logging.getLogger(__name__)
+
+_EMAIL_RE = re.compile(r"^[^\s@]+@[^\s@]+\.[^\s@]+$")
 
 
 def _card_id() -> str:
@@ -38,6 +43,12 @@ def register():
     password = data.get("password", "")
     if not name or not email or not password:
         return jsonify({"error": "missing_fields"}), 400
+    if len(name) > 120:
+        return jsonify({"error": "name_too_long"}), 400
+    if not _EMAIL_RE.match(email):
+        return jsonify({"error": "invalid_email"}), 400
+    if len(password) < 6:
+        return jsonify({"error": "password_too_short"}), 400
     result, err = register_student(name, email, password)
     if err:
         return jsonify({"error": err}), 409
@@ -61,12 +72,16 @@ def login():
 def reset_password_route():
     data = request.get_json(silent=True) or {}
     email = data.get("email", "").strip()
-    password = data.get("password", "")
-    if not email or not password:
+    old_password = data.get("oldPassword", "")
+    new_password = data.get("newPassword", data.get("password", ""))
+    if not email or not old_password or not new_password:
         return jsonify({"error": "missing_fields"}), 400
-    result, err = reset_password(email, password)
+    if len(new_password) < 6:
+        return jsonify({"error": "password_too_short"}), 400
+    result, err = reset_password(email, old_password, new_password)
     if err:
-        return jsonify({"error": err}), 404
+        status = 401 if err == "invalid_credentials" else 404
+        return jsonify({"error": err}), status
     return jsonify(result), 200
 
 
@@ -294,7 +309,7 @@ def sign_frame():
     try:
         state = get_sign_sessions().process_frame(sid, image_bytes)
     except Exception as exc:
-        print(f"[routes] sign frame processing failed: {exc}")
+        logger.exception("sign frame processing failed")
         return jsonify({"error": "processing_failed"}), 500
     if state is None:
         return jsonify({"error": "session_not_found"}), 404

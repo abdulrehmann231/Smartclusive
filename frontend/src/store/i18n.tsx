@@ -47,6 +47,7 @@ const DICT: Dict = {
     id: 'Masukkan email akunmu dan kata sandi baru.',
     en: 'Enter your account email and a new password.',
   },
+  'auth.oldPassword': { id: 'Kata Sandi Lama', en: 'Current Password' },
   'auth.newPassword': { id: 'Kata Sandi Baru', en: 'New Password' },
   'auth.confirmPassword': { id: 'Ulangi Kata Sandi Baru', en: 'Confirm New Password' },
   'auth.forgot.btn': { id: 'Atur Ulang Kata Sandi', en: 'Reset Password' },
