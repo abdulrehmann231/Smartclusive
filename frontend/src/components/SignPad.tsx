@@ -11,7 +11,7 @@ interface Props {
   onCancel?: () => void
 }
 
-const FRAME_INTERVAL_MS = 400
+const FRAME_INTERVAL_MS = 250
 
 export function SignPad({ target, kind, onComplete, onCancel }: Props) {
   const { t } = useI18n()

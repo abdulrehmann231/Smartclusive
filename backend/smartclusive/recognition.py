@@ -161,11 +161,14 @@ def _cosine_similarity(a, b) -> float:
 class ASLRecognizer:
     """Loads the trained landmark classifier if present, otherwise falls back to KNN templates."""
 
+    MAX_DIM = 320  # downscale longest edge before MediaPipe
+
     def __init__(self):
         self.mode = "demo"  # 'model' | 'knn' | 'demo'
         self.model = None
         self.classes: List[str] = []
         self.templates: Dict[str, List[List[float]]] = {}
+        self._hands = None  # persistent MediaPipe Hands instance
         self._load()
 
     def _load(self):
@@ -203,9 +206,29 @@ class ASLRecognizer:
             self.templates[label] = [vec]
         self.mode = "demo"
 
+    def _get_hands(self):
+        """Return a persistent MediaPipe Hands instance (created once, reused)."""
+        if self._hands is None:
+            _, mp_hands = _import_mp()
+            self._hands = mp_hands.Hands(
+                static_image_mode=True,
+                max_num_hands=1,
+                min_detection_confidence=0.5,
+            )
+        return self._hands
+
+    def _downscale(self, arr):
+        """Resize image so the longest edge is MAX_DIM, preserving aspect ratio."""
+        cv2 = _import_cv()
+        h, w = arr.shape[:2]
+        if max(h, w) <= self.MAX_DIM:
+            return arr
+        scale = self.MAX_DIM / max(h, w)
+        return cv2.resize(arr, (int(w * scale), int(h * scale)), interpolation=cv2.INTER_AREA)
+
     def extract_landmarks(self, image_bytes: bytes) -> Optional[List[float]]:
         """Run MediaPipe Hands on a frame and return a normalized 77-D feature vector.
-        
+
         Features (77 total):
           - 63: normalized landmark coordinates (21 points × 3)
           - 14: palm orientation and geometry features
@@ -218,7 +241,6 @@ class ASLRecognizer:
         try:
             cv2 = _import_cv()
             np = _import_np()
-            mp, mp_hands = _import_mp()
             arr = cv2.imdecode(np.frombuffer(image_bytes, np.uint8), cv2.IMREAD_COLOR)
         except Exception as exc:
             print(f"[recognition] extraction failed: {exc}")
@@ -228,28 +250,35 @@ class ASLRecognizer:
             return None
 
         try:
-            with mp_hands.Hands(static_image_mode=True, max_num_hands=1, min_detection_confidence=0.5) as hands:
+            arr = self._downscale(arr)
+            hands = self._get_hands()
+            try:
                 res = hands.process(cv2.cvtColor(arr, cv2.COLOR_BGR2RGB))
-                if not res.multi_hand_landmarks:
-                    return None
-                hand = res.multi_hand_landmarks[0]
-                handed = (
-                    res.multi_handedness[0].classification[0].label
-                    if res.multi_handedness
-                    else "Right"
-                )
-                pts = [[lm.x, lm.y, lm.z] for lm in hand.landmark]
-                if handed == "Left":
-                    for p in pts:
-                        p[0] = -p[0]
-                
-                # Base 63-D normalized landmarks
-                base_features = normalize_landmarks(pts)
-                
-                # Extended 10-D palm features
-                palm_features = compute_palm_features(pts)
-                
-                return base_features + palm_features
+            except Exception:
+                # Persistent instance may have entered a bad state; recreate once.
+                self._hands = None
+                hands = self._get_hands()
+                res = hands.process(cv2.cvtColor(arr, cv2.COLOR_BGR2RGB))
+            if not res.multi_hand_landmarks:
+                return None
+            hand = res.multi_hand_landmarks[0]
+            handed = (
+                res.multi_handedness[0].classification[0].label
+                if res.multi_handedness
+                else "Right"
+            )
+            pts = [[lm.x, lm.y, lm.z] for lm in hand.landmark]
+            if handed == "Left":
+                for p in pts:
+                    p[0] = -p[0]
+
+            # Base 63-D normalized landmarks
+            base_features = normalize_landmarks(pts)
+
+            # Extended 10-D palm features
+            palm_features = compute_palm_features(pts)
+
+            return base_features + palm_features
         except Exception as exc:
             print(f"[recognition] MediaPipe processing failed: {exc}")
             return None

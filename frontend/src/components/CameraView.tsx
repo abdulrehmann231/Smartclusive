@@ -67,15 +67,20 @@ export function CameraView({ active = true, box, boxLabel, onCapture, captureSig
   useEffect(() => {
     if (!captureSignal || !onCapture) return
     const v = videoRef.current
+    const srcW = v?.videoWidth || 640
+    const srcH = v?.videoHeight || 480
+    // Downscale longest edge to 320px to cut upload size ~10x.
+    const MAX = 320
+    const scale = Math.min(1, MAX / Math.max(srcW, srcH))
+    const w = Math.round(srcW * scale)
+    const h = Math.round(srcH * scale)
     const canvas = document.createElement('canvas')
-    const w = v?.videoWidth || 640
-    const h = v?.videoHeight || 480
     canvas.width = w
     canvas.height = h
     const ctx = canvas.getContext('2d')
     if (v && ctx && perm === 'granted' && v.videoWidth) {
       ctx.drawImage(v, 0, 0, w, h)
-      onCapture(canvas.toDataURL('image/png'))
+      onCapture(canvas.toDataURL('image/jpeg', 0.6))
     } else {
       // Fallback placeholder snapshot so the mock flow still works without a real camera.
       if (ctx) {
@@ -86,7 +91,7 @@ export function CameraView({ active = true, box, boxLabel, onCapture, captureSig
         ctx.textAlign = 'center'
         ctx.fillText('📷 ' + t('cam.sampleObject'), w / 2, h / 2)
       }
-      onCapture(canvas.toDataURL('image/png'))
+      onCapture(canvas.toDataURL('image/jpeg', 0.6))
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [captureSignal])
