@@ -16,10 +16,10 @@ export interface SignSession {
 function inferApiBase(): string {
   const env = (import.meta.env.VITE_API_URL || '').replace(/\/$/, '')
   if (env) return env
-  const host = window.location.hostname
-  if (host.endsWith('.daytonaproxy01.net') && host.startsWith('5173-')) {
-    return `https://5000-${host.slice(5)}`
-  }
+  // No explicit backend URL: call the same origin. In dev, Vite proxies /api and
+  // /mock to the backend (see vite.config.ts), which avoids cross-origin requests
+  // through the Daytona preview proxy (it injects a duplicate
+  // Access-Control-Allow-Origin header that browsers reject).
   return ''
 }
 
