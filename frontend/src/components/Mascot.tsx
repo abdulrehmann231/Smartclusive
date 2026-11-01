@@ -19,24 +19,24 @@ export function Mascot({ size = 48, wave = true, float = false, className = '' }
     >
       <defs>
         <linearGradient id="signyBody" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0" stopColor="#4cc3ee" />
-          <stop offset="1" stopColor="#1f9fd4" />
+          <stop offset="0" stopColor="#a78bfa" />
+          <stop offset="1" stopColor="#7c3aed" />
         </linearGradient>
       </defs>
 
       {/* body */}
       <rect x="24" y="30" width="72" height="70" rx="30" fill="url(#signyBody)" />
       {/* belly highlight */}
-      <ellipse cx="60" cy="72" rx="26" ry="22" fill="#eaf9ff" opacity="0.55" />
+      <ellipse cx="60" cy="72" rx="26" ry="22" fill="#f5f0ff" opacity="0.55" />
 
       {/* ears / antennae */}
-      <circle cx="36" cy="30" r="8" fill="#1f9fd4" />
-      <circle cx="84" cy="30" r="8" fill="#1f9fd4" />
+      <circle cx="36" cy="30" r="8" fill="#7c3aed" />
+      <circle cx="84" cy="30" r="8" fill="#7c3aed" />
 
       {/* eyes (blink) */}
       <g className="mascot__eyes">
-        <circle cx="49" cy="58" r="7" fill="#12303c" />
-        <circle cx="71" cy="58" r="7" fill="#12303c" />
+        <circle cx="49" cy="58" r="7" fill="#2a1a40" />
+        <circle cx="71" cy="58" r="7" fill="#2a1a40" />
         <circle cx="51.5" cy="55.5" r="2.4" fill="#fff" />
         <circle cx="73.5" cy="55.5" r="2.4" fill="#fff" />
       </g>
@@ -46,11 +46,11 @@ export function Mascot({ size = 48, wave = true, float = false, className = '' }
       <circle cx="79" cy="70" r="5" fill="#ffb3c7" opacity="0.85" />
 
       {/* smile */}
-      <path d="M50 74 Q60 84 70 74" stroke="#12303c" strokeWidth="3.5" fill="none" strokeLinecap="round" />
+      <path d="M50 74 Q60 84 70 74" stroke="#2a1a40" strokeWidth="3.5" fill="none" strokeLinecap="round" />
 
       {/* waving hand doing a sign */}
       <g className={wave ? 'mascot__hand' : ''} style={{ transformOrigin: '96px 44px' }}>
-        <rect x="90" y="20" width="9" height="26" rx="4.5" fill="#1f9fd4" />
+        <rect x="90" y="20" width="9" height="26" rx="4.5" fill="#7c3aed" />
         <g fill="#ffd400" stroke="#e6be00" strokeWidth="1.5">
           <circle cx="96" cy="18" r="11" />
           {/* little fingers */}
@@ -61,7 +61,7 @@ export function Mascot({ size = 48, wave = true, float = false, className = '' }
       </g>
 
       {/* left arm */}
-      <rect x="21" y="60" width="9" height="24" rx="4.5" fill="#1f9fd4" transform="rotate(18 25 60)" />
+      <rect x="21" y="60" width="9" height="24" rx="4.5" fill="#7c3aed" transform="rotate(18 25 60)" />
     </svg>
   )
 }

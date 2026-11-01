@@ -1,14 +1,14 @@
 /* ============================================================
    Smartclusive theme — GERKATIN palette
-   Sky-blue primary + yellow accent, from the reference site.
+   Purple primary + yellow accent.
    ============================================================ */
 :root {
-  /* Brand — GERKATIN sky blue */
-  --brand: #29abe2;
-  --brand-600: #1e97cc;
-  --brand-700: #167ba8;
-  --brand-050: #e9f7fd;
-  --brand-100: #d1eefb;
+  /* Brand — purple */
+  --brand: #8b5cf6;
+  --brand-600: #7c3aed;
+  --brand-700: #6d28d9;
+  --brand-050: #f5f0ff;
+  --brand-100: #ede4ff;
 
   /* Accent — GERKATIN yellow */
   --accent: #ffd400;
@@ -16,15 +16,15 @@
   --accent-ink: #4a3b00;
 
   /* Neutrals (light theme) */
-  --ink: #142a35;
-  --ink-soft: #45606c;
-  --muted: #7d94a0;
-  --line: #e2edf2;
-  --bg: #f2fafe;
+  --ink: #2a1a40;
+  --ink-soft: #5b4a72;
+  --muted: #8e82a3;
+  --line: #ebe4f5;
+  --bg: #f8f5ff;
   --surface: #ffffff;
-  --surface-2: #f5fafd;
+  --surface-2: #faf7ff;
   --input-bg: #ffffff;
-  --nav-bg: #29abe2;
+  --nav-bg: #8b5cf6;
   --nav-ink: #ffffff;
 
   /* Status */
@@ -36,9 +36,9 @@
 
   --radius: 18px;
   --radius-sm: 12px;
-  --shadow: 0 14px 40px rgba(20, 90, 120, 0.16);
-  --shadow-sm: 0 6px 18px rgba(20, 90, 120, 0.12);
-  --shadow-pop: 0 8px 0 rgba(20, 120, 160, 0.22);
+  --shadow: 0 14px 40px rgba(76, 29, 149, 0.16);
+  --shadow-sm: 0 6px 18px rgba(76, 29, 149, 0.12);
+  --shadow-pop: 0 8px 0 rgba(91, 33, 182, 0.22);
 
   /* Font system — Brilliant-style:
      - display: expressive serif for big headings (Fraunces)
@@ -50,26 +50,26 @@
 
 /* ---- Dark theme (set data-theme="dark" on <html>) ---- */
 :root[data-theme="dark"] {
-  --brand: #38b6ec;
-  --brand-600: #4cc3f2;
-  --brand-700: #7bd4f6;
-  --brand-050: rgba(56, 182, 236, 0.14);
-  --brand-100: rgba(56, 182, 236, 0.26);
+  --brand: #a78bfa;
+  --brand-600: #b79cfb;
+  --brand-700: #c4b5fd;
+  --brand-050: rgba(167, 139, 250, 0.14);
+  --brand-100: rgba(167, 139, 250, 0.26);
 
   --accent: #ffd633;
   --accent-600: #ffc400;
   --accent-ink: #4a3b00;
 
-  --ink: #e9f3f8;
-  --ink-soft: #b4c6d0;
-  --muted: #7f97a3;
-  --line: #29394a;
-  --bg: #0f1720;
-  --surface: #17222d;
-  --surface-2: #1d2a36;
-  --input-bg: #101a23;
-  --nav-bg: #0e1a24;
-  --nav-ink: #eaf3f8;
+  --ink: #f1ebfa;
+  --ink-soft: #c6badb;
+  --muted: #9488a8;
+  --line: #3a2f4d;
+  --bg: #15111d;
+  --surface: #1f1929;
+  --surface-2: #271f33;
+  --input-bg: #130f1a;
+  --nav-bg: #1a1325;
+  --nav-ink: #f1ebfa;
 
   --success: #3ec77a;
   --success-050: rgba(62, 199, 122, 0.16);
@@ -383,7 +383,7 @@ h1, h2, h3 {
 
 /* ---------------- Camera / SignPad ---------------- */
 .camera {
-  position: relative; background: #0d1b22; border-radius: var(--radius);
+  position: relative; background: #170f22; border-radius: var(--radius);
   overflow: hidden; aspect-ratio: 4/3; display: grid; place-items: center;
 }
 .camera video, .camera canvas, .camera img { width: 100%; height: 100%; object-fit: cover; }
@@ -458,7 +458,7 @@ h1, h2, h3 {
 @keyframes popIn { 0% { opacity: 0; transform: scale(.85); } 70% { transform: scale(1.04); } 100% { opacity: 1; transform: scale(1); } }
 @keyframes shimmer { 0% { background-position: 0% 50%; } 100% { background-position: 200% 50%; } }
 @keyframes drift { 0%,100% { transform: translate(0,0) rotate(0); } 50% { transform: translate(14px,-18px) rotate(8deg); } }
-@keyframes pulseRing { 0% { box-shadow: 0 0 0 0 rgba(41,171,226,.45); } 100% { box-shadow: 0 0 0 16px rgba(41,171,226,0); } }
+@keyframes pulseRing { 0% { box-shadow: 0 0 0 0 rgba(139,92,246,.45); } 100% { box-shadow: 0 0 0 16px rgba(139,92,246,0); } }
 @keyframes confetti { 0% { transform: translateY(-10px) rotate(0); opacity: 1; } 100% { transform: translateY(120px) rotate(360deg); opacity: 0; } }
 
 .anim-up { animation: fadeUp .5s ease both; }
@@ -479,11 +479,11 @@ h1, h2, h3 {
 /* Playful buttons: chunky press (Brilliant-like) */
 .btn--primary, .btn--accent { box-shadow: var(--shadow-pop); }
 .btn--primary:hover:not(:disabled), .btn--accent:hover:not(:disabled) { transform: translateY(-2px); }
-.btn--primary:active:not(:disabled), .btn--accent:active:not(:disabled) { transform: translateY(2px); box-shadow: 0 2px 0 rgba(20,120,160,.22); }
+.btn--primary:active:not(:disabled), .btn--accent:active:not(:disabled) { transform: translateY(2px); box-shadow: 0 2px 0 rgba(91,33,182,.22); }
 .btn--xl { font-size: 18px; padding: 16px 30px; }
 
 .btn--gradient {
-  background: linear-gradient(90deg, #7c5cff, #29abe2, #ffd400, #29abe2, #7c5cff);
+  background: linear-gradient(90deg, #6d28d9, #a855f7, #ffd400, #a855f7, #6d28d9);
   background-size: 200% 100%; color: #fff; animation: shimmer 4s linear infinite; box-shadow: var(--shadow);
 }
 .btn--gradient:hover:not(:disabled) { transform: translateY(-2px); }
