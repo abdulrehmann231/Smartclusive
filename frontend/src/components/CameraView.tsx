@@ -79,9 +79,9 @@ export function CameraView({ active = true, box, boxLabel, onCapture, captureSig
     } else {
       // Fallback placeholder snapshot so the mock flow still works without a real camera.
       if (ctx) {
-        ctx.fillStyle = '#0d1b22'
+        ctx.fillStyle = '#170f22'
         ctx.fillRect(0, 0, w, h)
-        ctx.fillStyle = '#29abe2'
+        ctx.fillStyle = '#8b5cf6'
         ctx.font = 'bold 40px Segoe UI, sans-serif'
         ctx.textAlign = 'center'
         ctx.fillText('📷 ' + t('cam.sampleObject'), w / 2, h / 2)

@@ -1,5 +1,5 @@
 // Lightweight confetti burst — used on success moments for engagement.
-const COLORS = ['#29abe2', '#ffd400', '#34c759', '#ff6ba6', '#7c5cff']
+const COLORS = ['#8b5cf6', '#ffd400', '#34c759', '#ff6ba6', '#c084fc']
 
 export function Confetti({ count = 24 }: { count?: number }) {
   return (
