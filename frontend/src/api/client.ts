@@ -10,6 +10,8 @@ import type {
   Student,
   Video,
 } from './types'
+import { DEMO_MODE } from '../config'
+import { demoApi } from './demo'
 
 function inferApiBase(): string {
   const env = (import.meta.env.VITE_API_URL || '').replace(/\/$/, '')
@@ -71,7 +73,7 @@ async function request<T>(
   return data as T
 }
 
-export const api = {
+const realApi = {
   // ---------------- Auth ----------------
   async register(name: string, email: string, password: string): Promise<AuthResult> {
     return request('POST', '/api/auth/register', { name, email, password })
@@ -146,7 +148,10 @@ export const api = {
   },
 }
 
-export type Api = typeof api
+export type Api = typeof realApi
+
+// VITE_DEMO_MODE=true swaps every call for in-browser demo data (no backend needed).
+export const api: Api = DEMO_MODE ? demoApi : realApi
 
 // Re-export for the detect service seam.
 export { api as detectService }

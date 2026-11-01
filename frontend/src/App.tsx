@@ -12,6 +12,7 @@ import { Quiz } from './pages/Quiz'
 import { Videos } from './pages/Videos'
 import { Deck } from './pages/Deck'
 import { Translate } from './pages/Translate'
+import { DEMO_MODE } from './config'
 
 function Shell({ children }: { children: React.ReactNode }) {
   const { t } = useI18n()
@@ -46,9 +47,10 @@ export default function App() {
       <AuthProvider>
         <Shell>
           <Routes>
-            <Route path="/login" element={<Login />} />
-            <Route path="/register" element={<Register />} />
-            <Route path="/forgot-password" element={<ForgotPassword />} />
+            {/* Demo mode hides auth: these paths fall through to the catch-all redirect. */}
+            {!DEMO_MODE && <Route path="/login" element={<Login />} />}
+            {!DEMO_MODE && <Route path="/register" element={<Register />} />}
+            {!DEMO_MODE && <Route path="/forgot-password" element={<ForgotPassword />} />}
             <Route path="/" element={<Home />} />
             <Route path="/learn/cards" element={guard(<Cards />)} />
             <Route path="/learn/capture" element={guard(<Capture />)} />

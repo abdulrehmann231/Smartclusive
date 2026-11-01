@@ -31,6 +31,15 @@ Point the dev server at the backend:
 echo "VITE_API_URL=http://localhost:5000" > .env
 ```
 
+### Demo mode
+
+Set `VITE_DEMO_MODE=true` (in `.env` or your host's env vars, e.g. Vercel) to run the
+frontend with no backend. All API calls are served from in-browser demo data
+(`src/api/demo.ts`), a demo student is always signed in, and the login / register /
+forgot-password pages are hidden (those routes redirect to `/`). Sign recognition and
+object detection are simulated. Vite inlines the value at build time, so rebuild after
+changing it.
+
 ## What's implemented (frontend.md build order)
 
 1. App shell, routing, real API client + `SignService`

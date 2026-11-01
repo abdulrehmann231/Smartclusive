@@ -4,6 +4,7 @@ import { useI18n } from '../store/i18n'
 import { LangSwitcher } from './LangSwitcher'
 import { ThemeToggle } from './ThemeToggle'
 import { Mascot } from './Mascot'
+import { DEMO_MODE } from '../config'
 
 const LINKS = [
   { to: '/', key: 'nav.home', end: true },
@@ -58,18 +59,24 @@ export function Nav() {
               <span className="pill pill--accent nav__user" title={student.name}>
                 👤 {student.name}
               </span>
-              <button
-                className="btn btn--ghost btn--sm"
-                style={{ color: '#fff', borderColor: 'rgba(255,255,255,.5)' }}
-                onClick={onLogout}
-              >
-                {t('nav.signout')}
-              </button>
+              {DEMO_MODE ? (
+                <span className="pill">Demo</span>
+              ) : (
+                <button
+                  className="btn btn--ghost btn--sm"
+                  style={{ color: '#fff', borderColor: 'rgba(255,255,255,.5)' }}
+                  onClick={onLogout}
+                >
+                  {t('nav.signout')}
+                </button>
+              )}
             </>
           ) : (
-            <NavLink to="/login" className="nav__link">
-              {t('nav.signin')}
-            </NavLink>
+            !DEMO_MODE && (
+              <NavLink to="/login" className="nav__link">
+                {t('nav.signin')}
+              </NavLink>
+            )
           )}
           {/* Light / dark theme toggle */}
           <ThemeToggle />

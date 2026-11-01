@@ -1,4 +1,6 @@
 import type { SignKind } from '../api/types'
+import { DEMO_MODE } from '../config'
+import { demoSignService } from '../api/demo'
 
 export interface SignProgress {
   matched: string[]
@@ -86,7 +88,7 @@ class RestSignSession implements SignSession {
   }
 }
 
-export const signService = {
+const restSignService = {
   async start(target: string, kind: SignKind): Promise<SignSession> {
     const res = await request<{ sessionId: string; state: SignProgress }>('POST', '/api/sign/start', {
       target,
@@ -95,3 +97,5 @@ export const signService = {
     return new RestSignSession(res.sessionId, res.state)
   },
 }
+
+export const signService: typeof restSignService = DEMO_MODE ? demoSignService : restSignService

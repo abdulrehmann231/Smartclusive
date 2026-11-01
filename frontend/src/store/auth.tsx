@@ -2,6 +2,8 @@ import { createContext, useContext, useEffect, useMemo, useState, type ReactNode
 import { Navigate, useLocation } from 'react-router-dom'
 import { api } from '../api/client'
 import type { Student } from '../api/types'
+import { DEMO_MODE } from '../config'
+import { DEMO_STUDENT } from '../api/demo'
 
 interface AuthState {
   student: Student | null
@@ -19,12 +21,15 @@ const STUDENT_KEY = 'sc.student'
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [student, setStudent] = useState<Student | null>(() => {
+    // Demo mode: always signed in as the demo student, no backend session.
+    if (DEMO_MODE) return DEMO_STUDENT
     const raw = localStorage.getItem(STUDENT_KEY)
     return raw ? (JSON.parse(raw) as Student) : null
   })
-  const [loading, setLoading] = useState(true)
+  const [loading, setLoading] = useState(!DEMO_MODE)
 
   useEffect(() => {
+    if (DEMO_MODE) return
     // Validate an existing token on boot; clear stale sessions.
     const token = localStorage.getItem(TOKEN_KEY)
     if (!token) {
@@ -69,6 +74,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         persist(res.token, res.student)
       },
       async logout() {
+        if (DEMO_MODE) return // demo student can't sign out
         await api.logout().catch(() => {})
         clearSession() // clear local cache so another student on this device sees nothing
       },
