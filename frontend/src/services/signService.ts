@@ -7,6 +7,9 @@ export interface SignProgress {
   expected: string | null
   complete: boolean
   target: string
+  feedback?: 'ready' | 'no_hand' | 'uncertain' | 'different_sign' | 'hold' | 'accepted' | 'release_hand' | 'complete' | 'model_unavailable'
+  candidates?: { label: string; score: number }[]
+  timingsMs?: { landmarks: number; classification: number }
 }
 
 export interface SignSession {
@@ -31,7 +34,7 @@ function token() {
   return localStorage.getItem('sc.token') || ''
 }
 
-async function request<T>(method: string, path: string, body?: unknown): Promise<T> {
+async function request<T>(method: string, path: string, body?: unknown, signal?: AbortSignal): Promise<T> {
   const url = `${API_BASE}${path}`
   const headers: Record<string, string> = {
     Authorization: `Bearer ${token()}`,
@@ -43,6 +46,7 @@ async function request<T>(method: string, path: string, body?: unknown): Promise
   const res = await fetch(url, {
     method,
     headers,
+    signal,
     body: body === undefined ? undefined : JSON.stringify(body),
   })
   const data = await res.json().catch(() => ({}))
@@ -61,6 +65,8 @@ class RestSignSession implements SignSession {
   private sessionId: string
   private progress: SignProgress
   private stopped = false
+  private frameId = 0
+  private pending: AbortController | null = null
 
   constructor(sessionId: string, initial: SignProgress) {
     this.sessionId = sessionId
@@ -73,17 +79,27 @@ class RestSignSession implements SignSession {
 
   async sendFrame(imageDataUrl: string): Promise<SignProgress> {
     if (this.stopped) return this.progress
-    const image = stripDataUrlPrefix(imageDataUrl)
-    const res = await request<SignProgress>('POST', '/api/sign/frame', {
-      sessionId: this.sessionId,
-      image,
-    })
-    this.progress = res
-    return res
+    if (this.pending) throw { error: 'frame_in_flight' }
+    const controller = new AbortController()
+    this.pending = controller
+    const timeout = window.setTimeout(() => controller.abort(), 8000)
+    try {
+      const res = await request<SignProgress>('POST', '/api/sign/frame', {
+        sessionId: this.sessionId,
+        image: stripDataUrlPrefix(imageDataUrl),
+        frameId: this.frameId++,
+      }, controller.signal)
+      if (!this.stopped) this.progress = res
+      return this.progress
+    } finally {
+      window.clearTimeout(timeout)
+      if (this.pending === controller) this.pending = null
+    }
   }
 
   stop(): void {
     this.stopped = true
+    this.pending?.abort()
     request('POST', '/api/sign/stop', { sessionId: this.sessionId }).catch(() => {})
   }
 }

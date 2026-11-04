@@ -273,8 +273,11 @@ def sign_start():
     kind = data.get("kind", "word")
     if not target or kind not in ("word", "letter", "number"):
         return jsonify({"error": "invalid_sign_request"}), 400
-    sid = get_sign_sessions().start(target, kind)
-    return jsonify({"sessionId": sid, "state": get_sign_sessions().state(sid)}), 200
+    try:
+        sid = get_sign_sessions().start(target, kind, owner=student.id)
+    except ValueError as exc:
+        return jsonify({"error": str(exc)}), 429 if str(exc) == "too_many_sign_sessions" else 400
+    return jsonify({"sessionId": sid, "state": get_sign_sessions().state(sid, owner=student.id)}), 200
 
 
 @api_bp.route("/sign/frame", methods=["POST"])
@@ -288,11 +291,14 @@ def sign_frame():
     if not sid or not image_b64:
         return jsonify({"error": "missing_fields"}), 400
     try:
-        image_bytes = base64.b64decode(image_b64)
+        image_bytes = base64.b64decode(image_b64, validate=True)
     except Exception:
         return jsonify({"error": "invalid_image"}), 400
+    frame_id = data.get("frameId")
+    if frame_id is not None and (type(frame_id) is not int or frame_id < 0):
+        return jsonify({"error": "invalid_frame_id"}), 400
     try:
-        state = get_sign_sessions().process_frame(sid, image_bytes)
+        state = get_sign_sessions().process_frame(sid, image_bytes, owner=student.id, frame_id=frame_id)
     except Exception as exc:
         print(f"[routes] sign frame processing failed: {exc}")
         return jsonify({"error": "processing_failed"}), 500
@@ -307,7 +313,7 @@ def sign_state():
     if err:
         return jsonify({"error": err[0]}), err[1]
     sid = request.args.get("sessionId")
-    state = get_sign_sessions().state(sid)
+    state = get_sign_sessions().state(sid, owner=student.id)
     if state is None:
         return jsonify({"error": "session_not_found"}), 404
     return jsonify(state), 200
@@ -320,5 +326,5 @@ def sign_stop():
         return jsonify({"error": err[0]}), err[1]
     data = request.get_json(silent=True) or {}
     sid = data.get("sessionId")
-    get_sign_sessions().stop(sid)
+    get_sign_sessions().stop(sid, owner=student.id)
     return jsonify({"ok": True}), 200

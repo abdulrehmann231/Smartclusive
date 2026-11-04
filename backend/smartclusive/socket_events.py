@@ -13,8 +13,11 @@ def register_socket(socketio):
         kind = (data or {}).get("kind", "word")
         if not target or kind not in ("word", "letter", "number"):
             return {"error": "invalid_sign_request"}
-        sid = get_sign_sessions().start(target, kind)
-        return {"sessionId": sid, "state": get_sign_sessions().state(sid)}
+        try:
+            sid = get_sign_sessions().start(target, kind, owner=request.sid)
+        except ValueError as exc:
+            return {"error": str(exc)}
+        return {"sessionId": sid, "state": get_sign_sessions().state(sid, owner=request.sid)}
 
     @socketio.on("sign:frame")
     def handle_sign_frame(data):
@@ -23,12 +26,12 @@ def register_socket(socketio):
         if not sid or not image_b64:
             return {"error": "missing_fields"}
         try:
-            image_bytes = base64.b64decode(image_b64)
+            image_bytes = base64.b64decode(image_b64, validate=True)
         except Exception:
             return {"error": "invalid_image"}
         sessions = get_sign_sessions()
         try:
-            state = sessions.process_frame(sid, image_bytes)
+            state = sessions.process_frame(sid, image_bytes, owner=request.sid)
         except Exception as exc:
             print(f"[socket_events] sign frame processing failed: {exc}")
             return {"error": "processing_failed"}
@@ -37,13 +40,13 @@ def register_socket(socketio):
         socketio.emit("sign:progress", state, room=request.sid)
         if state["complete"]:
             socketio.emit("sign:done", state, room=request.sid)
-            sessions.stop(sid)
+            sessions.stop(sid, owner=request.sid)
         return state
 
     @socketio.on("sign:stop")
     def handle_sign_stop(data):
         sid = (data or {}).get("sessionId")
-        get_sign_sessions().stop(sid)
+        get_sign_sessions().stop(sid, owner=request.sid)
         return {"ok": True}
 
     # Authentication-aware connection events are optional; the token can be
@@ -55,5 +58,13 @@ def register_socket(socketio):
             student = student_from_token(token)
             if student:
                 return True
-        # Allow anonymous connections; route-level auth guards the signing events.
+        # Legacy anonymous mode; signing sessions are isolated by connection ID.
         return True
+
+    @socketio.on("disconnect")
+    def handle_disconnect():
+        sessions = get_sign_sessions()
+        with sessions.lock:
+            ids = [sid for sid, value in sessions.sessions.items() if value.owner == request.sid]
+        for sid in ids:
+            sessions.stop(sid, owner=request.sid)

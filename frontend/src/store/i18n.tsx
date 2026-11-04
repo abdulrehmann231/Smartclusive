@@ -170,6 +170,16 @@ const DICT: Dict = {
   'qr.skip': { id: 'Lewati (salah)', en: 'Skip (wrong)' },
 
   // SignPad
+  'sp.modelUnavailable': { id: 'Model pengenalan tidak tersedia. Coba lagi nanti.', en: 'The recognition model is unavailable. Please try again later.' },
+  'sp.feedback.ready': { id: 'Tunjukkan isyarat berikutnya.', en: 'Show the next sign.' },
+  'sp.feedback.no_hand': { id: 'Tangan belum terlihat. Posisikan di dalam kamera.', en: 'No hand detected. Keep your hand in the camera view.' },
+  'sp.feedback.uncertain': { id: 'Belum yakin. Perjelas posisi jari dan arah telapak tangan.', en: 'Uncertain. Make your finger positions and palm direction clearer.' },
+  'sp.feedback.different_sign': { id: 'Model melihat {x}. Coba lagi.', en: 'The model suggests {x}. Adjust your sign and try again.' },
+  'sp.feedback.hold': { id: 'Tahan sebentar…', en: 'Hold briefly…' },
+  'sp.feedback.accepted': { id: 'Diterima. Lanjutkan ke huruf berikutnya.', en: 'Accepted. Move to the next letter.' },
+  'sp.feedback.release_hand': { id: 'Turunkan tangan sebentar, lalu ulangi huruf yang sama.', en: 'Lower your hand briefly, then sign the repeated letter again.' },
+  'sp.feedback.complete': { id: 'Selesai!', en: 'Complete!' },
+  'sp.feedback.model_unavailable': { id: 'Model tidak tersedia.', en: 'Recognition is unavailable.' },
   'sp.letter': { id: 'huruf', en: 'letter' },
   'sp.number': { id: 'angka', en: 'number' },
   'sp.word': { id: 'kata', en: 'word' },

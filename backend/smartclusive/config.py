@@ -26,6 +26,10 @@ class Config:
         "ASL_TEMPLATES_PATH", os.path.join(DATA_DIR, "asl_templates.json")
     )
 
+    # Provisional rejection policy; calibrate on signer-held-out webcam data.
+    ASL_CONFIDENCE_THRESHOLD = float(os.environ.get("ASL_CONFIDENCE_THRESHOLD", "0.55"))
+    ASL_MARGIN_THRESHOLD = float(os.environ.get("ASL_MARGIN_THRESHOLD", "0.15"))
+
     # CORS: comma-separated list of allowed origins. Defaults to "*" for local dev.
     CORS_ORIGINS = os.environ.get("CORS_ORIGINS", "*")
 

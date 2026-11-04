@@ -30,7 +30,7 @@ Create a new **Web Service** in Render:
 | Root directory | `backend` |
 | Runtime | `Python 3` |
 | Build command | `pip install --upgrade pip setuptools wheel && pip install -r requirements.txt && python scripts/generate_lesson_videos.py` |
-| Start command | `gunicorn -w 2 -b 0.0.0.0:$PORT app:app` |
+| Start command | `gunicorn -w 1 -b 0.0.0.0:$PORT app:app` |
 
 Add environment variables:
 
@@ -74,7 +74,7 @@ If you prefer one Render service that serves both frontend and backend:
    - Runs `cd frontend && npm install && npm run build`.
    - Runs `cd backend && python scripts/generate_lesson_videos.py`.
 3. Set `FRONTEND_DIST_DIR=frontend/dist`.
-4. Start command: `cd backend && gunicorn -w 2 -b 0.0.0.0:$PORT app:app`.
+4. Start command: `cd backend && gunicorn -w 1 -b 0.0.0.0:$PORT app:app`.
 
 The backend will then serve the built frontend at `/` and the API at `/api`.
 
@@ -116,6 +116,8 @@ This is a transient PyPI/network error on Render's side. The build command now u
 3. Retry the deploy.
 
 ## Production notes
+
+- **Signing sessions:** Use one worker and one instance with the current in-memory session store. Multiple workers/replicas need shared state and tracker routing; otherwise frame requests can lose their session. See [recognition notes](docs/recognition-first-stage.md).
 
 - **Socket.IO:** The frontend currently uses the REST fallback for sign recognition, so WebSocket support is optional. If you want native WebSockets, run gunicorn with a gevent/eventlet worker (add the worker to `requirements.txt`).
 - **Object detection:** The default `DETECT_DEMO_FALLBACK=1` returns demo detections so the capture flow works without a heavy YOLO model. Set to `0` and upload `yolov8n.pt` for real detection.

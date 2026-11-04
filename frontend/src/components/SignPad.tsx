@@ -3,6 +3,7 @@ import type { SignKind } from '../api/types'
 import { signService, type SignProgress, type SignSession } from '../services/signService'
 import { CameraView } from './CameraView'
 import { useI18n } from '../store/i18n'
+import { DEMO_MODE } from '../config'
 
 interface Props {
   target: string
@@ -11,7 +12,7 @@ interface Props {
   onCancel?: () => void
 }
 
-const FRAME_INTERVAL_MS = 400
+const FRAME_INTERVAL_MS = 100
 
 export function SignPad({ target, kind, onComplete, onCancel }: Props) {
   const { t } = useI18n()
@@ -23,71 +24,100 @@ export function SignPad({ target, kind, onComplete, onCancel }: Props) {
     target: target.toUpperCase(),
   })
   const [capturing, setCapturing] = useState(false)
-  const [busy, setBusy] = useState(false)
+  const [ready, setReady] = useState(false)
   const [error, setError] = useState('')
   const [captureSignal, setCaptureSignal] = useState(0)
+  const [attempt, setAttempt] = useState(0)
 
   const sessionRef = useRef<SignSession | null>(null)
-  const intervalRef = useRef<number | null>(null)
-  const doneRef = useRef(false)
+  const timerRef = useRef<number | null>(null)
+  const capturingRef = useRef(false)
+  const busyRef = useRef(false)
+  const generationRef = useRef(0)
+  const completeRef = useRef(onComplete)
+  completeRef.current = onComplete
+
+  function stopCapturing() {
+    capturingRef.current = false
+    setCapturing(false)
+    if (timerRef.current !== null) window.clearTimeout(timerRef.current)
+    timerRef.current = null
+  }
 
   useEffect(() => {
     let alive = true
+    generationRef.current += 1
+    busyRef.current = false
+    stopCapturing()
+    sessionRef.current = null
+    setReady(false)
+    setError('')
+    setProgress({ matched: [], expected: units[0] ?? null, complete: false, target })
     signService.start(target, kind).then((session) => {
-      if (!alive) {
-        session.stop()
-        return
-      }
+      if (!alive) { session.stop(); return }
       sessionRef.current = session
       setProgress(session.state())
-      doneRef.current = false
-    })
+      setReady(true)
+    }).catch(() => { if (alive) setError(t('sp.errGeneric')) })
     return () => {
       alive = false
+      generationRef.current += 1
+      capturingRef.current = false
       sessionRef.current?.stop()
-      if (intervalRef.current) window.clearInterval(intervalRef.current)
+      sessionRef.current = null
+      if (timerRef.current !== null) window.clearTimeout(timerRef.current)
     }
-  }, [target, kind])
+    // A language change must not reset a signing session.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [target, kind, attempt])
+
+  function scheduleCapture() {
+    if (!capturingRef.current) return
+    timerRef.current = window.setTimeout(() => {
+      if (capturingRef.current) setCaptureSignal((n) => n + 1)
+    }, FRAME_INTERVAL_MS)
+  }
 
   async function handleCapture(dataUrl: string) {
     const session = sessionRef.current
-    if (!session || !capturing || busy || doneRef.current) return
-    setBusy(true)
+    if (!session || !capturingRef.current || busyRef.current) return
+    const generation = generationRef.current
+    busyRef.current = true
     try {
-      const p = await session.sendFrame(dataUrl)
-      setProgress(p)
-      if (p.complete && !doneRef.current) {
-        doneRef.current = true
-        if (intervalRef.current) {
-          window.clearInterval(intervalRef.current)
-          intervalRef.current = null
-        }
-        setCapturing(false)
-        setTimeout(onComplete, 500)
+      const next = await session.sendFrame(dataUrl)
+      if (generation !== generationRef.current) return
+      setProgress(next)
+      if (next.complete) {
+        stopCapturing()
+        timerRef.current = window.setTimeout(() => completeRef.current(), 300)
+      } else if (next.feedback === 'model_unavailable') {
+        stopCapturing()
+        setError(t('sp.modelUnavailable'))
       }
-    } catch (err: any) {
-      setError(err?.error || t('sp.errGeneric'))
+    } catch {
+      if (generation === generationRef.current) {
+        stopCapturing()
+        setError(t('sp.errGeneric'))
+      }
     } finally {
-      setBusy(false)
+      if (generation === generationRef.current) {
+        busyRef.current = false
+        scheduleCapture()
+      }
     }
   }
 
   function startCapturing() {
-    if (capturing) return
+    if (capturingRef.current || busyRef.current || !ready || progress.complete) return
     setError('')
+    capturingRef.current = true
     setCapturing(true)
     setCaptureSignal((n) => n + 1)
-    intervalRef.current = window.setInterval(() => {
-      setCaptureSignal((n) => n + 1)
-    }, FRAME_INTERVAL_MS)
   }
 
-  function stopCapturing() {
-    if (intervalRef.current) {
-      window.clearInterval(intervalRef.current)
-      intervalRef.current = null
-    }
-    setCapturing(false)
+  function captureUnavailable() {
+    stopCapturing()
+    setError(t('cam.hint'))
   }
 
   const multiDigit = kind === 'number' && units.length > 1
@@ -96,7 +126,8 @@ export function SignPad({ target, kind, onComplete, onCancel }: Props) {
 
   return (
     <div>
-      <CameraView active onCapture={handleCapture} captureSignal={captureSignal} />
+      {/* Demo mode grades no real frames, so it keeps the placeholder fallback for visitors without a camera. */}
+      <CameraView active signing={!DEMO_MODE} onCapture={handleCapture} onCaptureError={captureUnavailable} captureSignal={captureSignal} />
 
       <div className="signpad__target">
         {units.map((u, i) => {
@@ -110,11 +141,22 @@ export function SignPad({ target, kind, onComplete, onCancel }: Props) {
         })}
       </div>
 
+      {capturing && progress.feedback && (
+        <p role="status" style={{ marginTop: 12 }}>
+          {t(`sp.feedback.${progress.feedback}`, {
+            x: progress.candidates?.[0]?.label ?? '',
+          })}
+        </p>
+      )}
+
       {multiDigit && <div className="card__sub">{t('sp.multiDigit')}</div>}
 
       {error && (
         <div className="alert alert--error" style={{ marginTop: 12 }}>
-          {error}
+          <span>{error}</span>
+          <button className="btn btn--ghost" onClick={() => setAttempt((n) => n + 1)}>
+            {t('common.retry')}
+          </button>
         </div>
       )}
 
@@ -131,7 +173,7 @@ export function SignPad({ target, kind, onComplete, onCancel }: Props) {
           </div>
           <div className="row mt">
             {!capturing ? (
-              <button className="btn btn--primary" onClick={startCapturing}>
+              <button className="btn btn--primary" onClick={startCapturing} disabled={!ready}>
                 {t('sp.startBtn')}
               </button>
             ) : (

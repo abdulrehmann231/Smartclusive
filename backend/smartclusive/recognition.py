@@ -1,10 +1,12 @@
-import base64
-import io
 import json
 import math
 import os
 import random
 import secrets
+import atexit
+import threading
+import time
+from dataclasses import dataclass, field
 from typing import Dict, List, Optional, Tuple
 
 from smartclusive.config import Config
@@ -175,6 +177,10 @@ class ASLRecognizer:
                 self.model = _import_joblib().load(Config.ASL_MODEL_PATH)
                 with open(Config.ASL_LABELS_PATH, "r") as f:
                     self.classes = sorted(json.load(f))
+                if getattr(self.model, "n_features_in_", None) != 77:
+                    raise ValueError("ASL model requires the legacy 77-feature schema")
+                if set(self.classes) != set(self.model.classes_):
+                    raise ValueError("ASL model and label file do not match")
                 self.mode = "model"
                 return
             except Exception as exc:  # pragma: no cover
@@ -203,7 +209,14 @@ class ASLRecognizer:
             self.templates[label] = [vec]
         self.mode = "demo"
 
-    def extract_landmarks(self, image_bytes: bytes) -> Optional[List[float]]:
+    def create_tracker(self):
+        _, mp_hands = _import_mp()
+        return mp_hands.Hands(
+            static_image_mode=False, max_num_hands=1,
+            min_detection_confidence=0.5, min_tracking_confidence=0.5,
+        )
+
+    def extract_landmarks(self, image_bytes: bytes, tracker=None) -> Optional[List[float]]:
         """Run MediaPipe Hands on a frame and return a normalized 77-D feature vector.
         
         Features (77 total):
@@ -227,32 +240,27 @@ class ASLRecognizer:
         if arr is None:
             return None
 
+        owned = tracker is None
+        if owned:
+            tracker = mp_hands.Hands(
+                static_image_mode=True, max_num_hands=1, min_detection_confidence=0.5,
+            )
         try:
-            with mp_hands.Hands(static_image_mode=True, max_num_hands=1, min_detection_confidence=0.5) as hands:
-                res = hands.process(cv2.cvtColor(arr, cv2.COLOR_BGR2RGB))
-                if not res.multi_hand_landmarks:
-                    return None
-                hand = res.multi_hand_landmarks[0]
-                handed = (
-                    res.multi_handedness[0].classification[0].label
-                    if res.multi_handedness
-                    else "Right"
-                )
-                pts = [[lm.x, lm.y, lm.z] for lm in hand.landmark]
-                if handed == "Left":
-                    for p in pts:
-                        p[0] = -p[0]
-                
-                # Base 63-D normalized landmarks
-                base_features = normalize_landmarks(pts)
-                
-                # Extended 10-D palm features
-                palm_features = compute_palm_features(pts)
-                
-                return base_features + palm_features
-        except Exception as exc:
-            print(f"[recognition] MediaPipe processing failed: {exc}")
-            return None
+            res = tracker.process(cv2.cvtColor(arr, cv2.COLOR_BGR2RGB))
+            if not res.multi_hand_landmarks:
+                return None
+            hand = res.multi_hand_landmarks[0]
+            handed = (res.multi_handedness[0].classification[0].label
+                      if res.multi_handedness else "Right")
+            pts = [[lm.x, lm.y, lm.z] for lm in hand.landmark]
+            if handed == "Left":
+                for point in pts:
+                    point[0] = -point[0]
+            # Preserve the feature contract of the existing v2 model.
+            return normalize_landmarks(pts) + compute_palm_features(pts)
+        finally:
+            if owned:
+                tracker.close()
 
     def predict(self, feature: List[float], restrict_to: Optional[List[str]] = None) -> List[Tuple[str, float]]:
         """Return top predictions as (label, confidence/probability)."""
@@ -290,120 +298,244 @@ class ASLRecognizer:
 
 
 class SignVerifier:
-    """Stateful letter-by-letter / digit-by-digit verifier with a temporal stability gate."""
+    """Verify predictions without using the expected answer to rank candidates."""
 
     STABILITY = 3
-    CONFIDENCE_THRESHOLD = 0.55
+    CONFIDENCE_THRESHOLD = Config.ASL_CONFIDENCE_THRESHOLD
+    MARGIN_THRESHOLD = Config.ASL_MARGIN_THRESHOLD
+    HOLD_SECONDS = 0.25
+    MAX_GAP_SECONDS = 1.0
+    RELEASE_SECONDS = 0.15
 
     def __init__(self, target: str, kind: str):
         import re
         self.target = re.sub(r"[^A-Z0-9]", "", target.upper())
-        self.kind = kind  # 'word' | 'letter' | 'number'
+        if not self.target:
+            raise ValueError("invalid_sign_request")
+        self.kind = kind
         self.units = list(self.target)
         self.index = 0
         self.stable_count = 0
-        self.last_label: Optional[str] = None
+        self.last_label = None
+        self.stable_since = None
+        self.last_time = None
+        self.release_since = None
+        self.release_count = 0
+        self.needs_release = False
+        self.feedback = "ready"
+        self.candidates = []
 
-    def expected(self) -> Optional[str]:
+    def expected(self):
         return self.units[self.index] if self.index < len(self.units) else None
 
-    def _matches_expected(self, label: str) -> bool:
-        exp = self.expected()
-        if exp is None:
-            return False
-        return label.upper() == exp
+    def _reset_stability(self):
+        self.stable_count = 0
+        self.last_label = None
+        self.stable_since = None
 
-    def update(self, top_prediction: Optional[Tuple[str, float]]) -> dict:
+    def update(self, top_prediction, *, runner_up=0.0, now=None, hand_present=None):
+        now = time.monotonic() if now is None else now
+        if self.index >= len(self.units):
+            return self.state()
+        if self.last_time is not None and now <= self.last_time:
+            return self.state()
+        if self.last_time is not None and now - self.last_time > self.MAX_GAP_SECONDS:
+            self._reset_stability()
+            self.release_since = None
+            self.release_count = 0
+        self.last_time = now
+        if hand_present is None:
+            hand_present = top_prediction is not None
+        if self.needs_release:
+            self._reset_stability()
+            self.feedback = "release_hand"
+            if not hand_present:
+                if self.release_since is None:
+                    self.release_since = now
+                self.release_count += 1
+                if self.release_count >= 2 and now - self.release_since >= self.RELEASE_SECONDS:
+                    self.needs_release = False
+                    self.feedback = "ready"
+            else:
+                self.release_since = None
+                self.release_count = 0
+            return self.state()
         if top_prediction is None:
-            self.stable_count = 0
-            self.last_label = None
+            self._reset_stability()
+            self.feedback = "no_hand" if not hand_present else "uncertain"
             return self.state()
-
         label, confidence = top_prediction
-        if confidence < self.CONFIDENCE_THRESHOLD:
-            self.stable_count = 0
-            self.last_label = None
+        if (not math.isfinite(confidence) or not math.isfinite(runner_up)
+                or confidence < self.CONFIDENCE_THRESHOLD
+                or confidence - runner_up < self.MARGIN_THRESHOLD):
+            self._reset_stability()
+            self.feedback = "uncertain"
             return self.state()
-
-        if label == self.last_label and self._matches_expected(label):
-            self.stable_count += 1
-        else:
+        if label != self.expected():
+            self._reset_stability()
+            self.feedback = "different_sign"
+            return self.state()
+        if label != self.last_label:
+            self._reset_stability()
             self.last_label = label
-            self.stable_count = 1
-
-        if self.stable_count >= self.STABILITY:
+            self.stable_since = now
+        self.stable_count += 1
+        self.feedback = "hold"
+        if self.stable_count >= self.STABILITY and now - self.stable_since >= self.HOLD_SECONDS:
             self.index += 1
-            self.stable_count = 0
-            self.last_label = None
-
+            self._reset_stability()
+            self.needs_release = self.expected() == label
+            self.feedback = "complete" if self.expected() is None else (
+                "release_hand" if self.needs_release else "accepted")
         return self.state()
 
-    def state(self) -> dict:
+    def state(self):
         return {
-            "matched": self.units[: self.index],
-            "expected": self.expected(),
-            "complete": self.index >= len(self.units),
-            "target": self.target,
+            "matched": self.units[:self.index], "expected": self.expected(),
+            "complete": self.index >= len(self.units), "target": self.target,
+            "feedback": self.feedback, "candidates": self.candidates,
         }
 
 
+@dataclass
+class SignSession:
+    verifier: SignVerifier
+    owner: object = None
+    tracker: object = None
+    last_seen: float = field(default_factory=time.monotonic)
+    last_frame_id: int = -1
+    closed: bool = False
+    lock: object = field(default_factory=threading.RLock)
+
+    def close(self):
+        with self.lock:
+            self.closed = True
+            if self.tracker is not None:
+                self.tracker.close()
+                self.tracker = None
+
+
 class SignSessionManager:
-    def __init__(self, recognizer: Optional[ASLRecognizer] = None):
+    def __init__(self, recognizer=None, *, max_sessions=32, ttl_seconds=120):
         self.recognizer = recognizer or ASLRecognizer()
-        self.sessions: Dict[str, SignVerifier] = {}
+        self.sessions = {}
+        self.lock = threading.RLock()
+        self.max_sessions = max_sessions
+        self.ttl_seconds = ttl_seconds
 
-    def _sid(self) -> str:
-        return "sign-" + secrets.token_hex(6)
+    def _prune(self):
+        now = time.monotonic()
+        with self.lock:
+            for sid, session in list(self.sessions.items()):
+                if session.lock.acquire(blocking=False):
+                    try:
+                        if now - session.last_seen > self.ttl_seconds:
+                            session.close()
+                            self.sessions.pop(sid, None)
+                    finally:
+                        session.lock.release()
 
-    def start(self, target: str, kind: str) -> str:
-        sid = self._sid()
-        self.sessions[sid] = SignVerifier(target, kind)
-        return sid
+    def start(self, target, kind, owner=None):
+        verifier = SignVerifier(target, kind)
+        self._prune()
+        with self.lock:
+            if len(self.sessions) >= self.max_sessions:
+                raise ValueError("too_many_sign_sessions")
+            sid = "sign-" + secrets.token_hex(16)
+            self.sessions[sid] = SignSession(verifier, owner=owner)
+            return sid
 
-    def _restrict_for(self, verifier: SignVerifier) -> Optional[List[str]]:
-        exp = verifier.expected()
-        if exp is None:
+    def _get(self, sid, owner):
+        self._prune()
+        with self.lock:
+            session = self.sessions.get(sid)
+            return session if session is not None and session.owner == owner else None
+
+    def process_frame(self, sid, image_bytes, owner=None, frame_id=None):
+        session = self._get(sid, owner)
+        if session is None:
             return None
-        if verifier.kind == "number" or exp.isdigit():
-            return [str(i) for i in range(10)]
-        if verifier.kind == "letter" or exp.isalpha():
-            return [chr(ord("A") + i) for i in range(26)]
-        return None
+        with session.lock:
+            if session.closed:
+                return None
+            session.last_seen = time.monotonic()
+            verifier = session.verifier
+            if frame_id is not None and frame_id <= session.last_frame_id:
+                return verifier.state()
+            if frame_id is not None:
+                session.last_frame_id = frame_id
+            if verifier.expected() is None:
+                return verifier.state()
+            if self.recognizer.mode != "model":
+                verifier.feedback = "model_unavailable"
+                return verifier.state()
+            started = time.perf_counter()
+            if session.tracker is None:
+                session.tracker = self.recognizer.create_tracker()
+            feature = self.recognizer.extract_landmarks(image_bytes, tracker=session.tracker)
+            extracted = time.perf_counter()
+            ranked = []
+            if feature is not None:
+                # Restrict only by letter/digit task, never by the expected answer.
+                digits = verifier.kind == "number" or verifier.expected().isdigit()
+                allowed = list("0123456789" if digits else "ABCDEFGHIJKLMNOPQRSTUVWXYZ")
+                ranked = self.recognizer.predict(feature, restrict_to=allowed)
+            verifier.candidates = [{"label": str(label), "score": float(score)}
+                                   for label, score in ranked[:3]]
+            state = verifier.update(
+                ranked[0] if ranked else None,
+                runner_up=ranked[1][1] if len(ranked) > 1 else 0.0,
+                hand_present=feature is not None,
+            )
+            state["timingsMs"] = {
+                "landmarks": round((extracted - started) * 1000, 2),
+                "classification": round((time.perf_counter() - extracted) * 1000, 2),
+            }
+            if state["complete"] and session.tracker is not None:
+                session.tracker.close()
+                session.tracker = None
+            return state
 
-    def process_frame(self, sid: str, image_bytes: bytes) -> Optional[dict]:
-        verifier = self.sessions.get(sid)
-        if verifier is None:
+    def state(self, sid, owner=None):
+        session = self._get(sid, owner)
+        if session is None:
             return None
-        restrict = self._restrict_for(verifier)
-        feature = self.recognizer.extract_landmarks(image_bytes)
-        if feature is None:
-            top = None
-        else:
-            ranked = self.recognizer.predict(feature, restrict_to=restrict)
-            top = ranked[0] if ranked else None
-        return verifier.update(top)
+        with session.lock:
+            return None if session.closed else session.verifier.state()
 
-    def state(self, sid: str) -> Optional[dict]:
-        v = self.sessions.get(sid)
-        return v.state() if v else None
+    def stop(self, sid, owner=None):
+        with self.lock:
+            session = self.sessions.get(sid)
+            if session is None or session.owner != owner:
+                return
+            self.sessions.pop(sid, None)
+        session.close()
 
-    def stop(self, sid: str) -> None:
-        self.sessions.pop(sid, None)
+    def close(self):
+        with self.lock:
+            sessions = list(self.sessions.values())
+            self.sessions.clear()
+        for session in sessions:
+            session.close()
 
 
 _recognizer: Optional[ASLRecognizer] = None
 _session_manager: Optional[SignSessionManager] = None
+_singleton_lock = threading.RLock()
 
 
 def get_recognizer() -> ASLRecognizer:
     global _recognizer
-    if _recognizer is None:
-        _recognizer = ASLRecognizer()
+    with _singleton_lock:
+        if _recognizer is None:
+            _recognizer = ASLRecognizer()
     return _recognizer
 
 
 def get_sign_sessions() -> SignSessionManager:
     global _session_manager
-    if _session_manager is None:
-        _session_manager = SignSessionManager(get_recognizer())
+    with _singleton_lock:
+        if _session_manager is None:
+            _session_manager = SignSessionManager(get_recognizer())
+            atexit.register(_session_manager.close)
     return _session_manager

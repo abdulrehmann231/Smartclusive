@@ -92,6 +92,9 @@ The frontend runs on port 5173 by default.
 
 ### Running Tests
 
+Recognition behavior, limitations, and webcam confusion evaluation are documented
+in [Recognition first-stage changes](docs/recognition-first-stage.md).
+
 Backend smoke tests:
 ```bash
 cd backend

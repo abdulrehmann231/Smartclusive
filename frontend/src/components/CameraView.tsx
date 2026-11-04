@@ -17,14 +17,18 @@ interface Props {
   // Called with a data-URL snapshot when captureSignal changes (Feature 2).
   onCapture?: (dataUrl: string) => void
   captureSignal?: number
+  signing?: boolean
+  onCaptureError?: () => void
   overlay?: React.ReactNode
 }
 
 // Live camera with explicit permission gating + graceful fallbacks
 // (fingerspelling-recognition spec: no capture until consent).
-export function CameraView({ active = true, box, boxLabel, onCapture, captureSignal, overlay }: Props) {
+export function CameraView({ active = true, box, boxLabel, onCapture, captureSignal, overlay, signing = false, onCaptureError }: Props) {
   const { t } = useI18n()
   const videoRef = useRef<HTMLVideoElement>(null)
+  const canvasRef = useRef<HTMLCanvasElement | null>(null)
+  const cameraRequestRef = useRef(0)
   const streamRef = useRef<MediaStream | null>(null)
   const [perm, setPerm] = useState<Perm>('idle')
 
@@ -34,12 +38,19 @@ export function CameraView({ active = true, box, boxLabel, onCapture, captureSig
       return
     }
     setPerm('requesting')
+    const requestId = ++cameraRequestRef.current
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user' }, audio: false })
+      if (requestId !== cameraRequestRef.current) {
+        stream.getTracks().forEach((track) => track.stop())
+        return
+      }
+      streamRef.current?.getTracks().forEach((track) => track.stop())
       streamRef.current = stream
       // Render the <video> first, then bind the stream in the effect below.
       setPerm('granted')
     } catch (err: unknown) {
+      if (requestId !== cameraRequestRef.current) return
       const name = (err as { name?: string })?.name
       setPerm(name === 'NotAllowedError' || name === 'SecurityError' ? 'denied' : 'unavailable')
     }
@@ -57,6 +68,7 @@ export function CameraView({ active = true, box, boxLabel, onCapture, captureSig
   useEffect(() => {
     if (active) requestCamera()
     return () => {
+      cameraRequestRef.current += 1
       streamRef.current?.getTracks().forEach((tr) => tr.stop())
       streamRef.current = null
     }
@@ -67,15 +79,26 @@ export function CameraView({ active = true, box, boxLabel, onCapture, captureSig
   useEffect(() => {
     if (!captureSignal || !onCapture) return
     const v = videoRef.current
-    const canvas = document.createElement('canvas')
-    const w = v?.videoWidth || 640
-    const h = v?.videoHeight || 480
+    if (signing && (!v?.videoWidth || perm !== 'granted' || v.readyState < 2)) {
+      onCaptureError?.()
+      return
+    }
+    const canvas = canvasRef.current ?? (canvasRef.current = document.createElement('canvas'))
+    const sourceW = v?.videoWidth || 640
+    const sourceH = v?.videoHeight || 480
+    const scale = signing ? Math.min(1, 640 / Math.max(sourceW, sourceH)) : 1
+    const w = Math.round(sourceW * scale)
+    const h = Math.round(sourceH * scale)
     canvas.width = w
     canvas.height = h
     const ctx = canvas.getContext('2d')
+    if (signing && !ctx) {
+      onCaptureError?.()
+      return
+    }
     if (v && ctx && perm === 'granted' && v.videoWidth) {
       ctx.drawImage(v, 0, 0, w, h)
-      onCapture(canvas.toDataURL('image/png'))
+      onCapture(signing ? canvas.toDataURL('image/jpeg', 0.85) : canvas.toDataURL('image/png'))
     } else {
       // Fallback placeholder snapshot so the mock flow still works without a real camera.
       if (ctx) {

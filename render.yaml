@@ -12,7 +12,7 @@ services:
       pip install --upgrade pip setuptools wheel &&
       pip install -r requirements.txt &&
       python scripts/generate_lesson_videos.py
-    startCommand: gunicorn -w 2 -b 0.0.0.0:$PORT app:app
+    startCommand: gunicorn -w 1 -b 0.0.0.0:$PORT app:app
     envVars:
       - key: PYTHON_VERSION
         value: "3.11"

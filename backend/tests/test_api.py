@@ -206,7 +206,7 @@ def test_videos_flow(client):
     r = client.get("/api/videos", headers=h)
     assert r.status_code == 200
     videos = r.get_json()["videos"]
-    assert len(videos) == 2
+    assert {video['id'] for video in videos} == {'v-letters', 'v-numbers', 'v-words'}
 
     r = client.post(f"/api/videos/{videos[0]['id']}/complete", headers=h)
     assert r.status_code == 200
@@ -254,3 +254,25 @@ def test_sign_rest_session(client):
 
     r = client.post("/api/sign/stop", headers=h, json={"sessionId": sid})
     assert r.status_code == 200
+
+
+def test_sign_sessions_are_private(client):
+    owner = {"Authorization": f"Bearer {_auth(client, 'owner@example.com')}"}
+    other = {"Authorization": f"Bearer {_auth(client, 'other@example.com')}"}
+    result = client.post('/api/sign/start', headers=owner, json={'target': 'A', 'kind': 'letter'})
+    sid = result.get_json()['sessionId']
+    assert client.get(f'/api/sign/state?sessionId={sid}', headers=other).status_code == 404
+    result = client.post('/api/sign/frame', headers=other, json={
+        'sessionId': sid, 'image': base64.b64encode(_png_bytes()).decode(), 'frameId': 0,
+    })
+    assert result.status_code == 404
+    client.post('/api/sign/stop', headers=other, json={'sessionId': sid})
+    assert client.get(f'/api/sign/state?sessionId={sid}', headers=owner).status_code == 200
+    client.post('/api/sign/stop', headers=owner, json={'sessionId': sid})
+
+
+def test_sign_request_validation(client):
+    headers = {"Authorization": f"Bearer {_auth(client)}"}
+    assert client.post('/api/sign/start', headers=headers, json={'target': '!!!', 'kind': 'word'}).status_code == 400
+    result = client.post('/api/sign/frame', headers=headers, json={'sessionId': 'missing', 'image': 'not-base64'})
+    assert result.status_code == 400
