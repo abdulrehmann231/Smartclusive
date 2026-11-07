@@ -2,9 +2,10 @@ import re
 import urllib.parse
 
 
-# Public-domain ASL alphabet illustrations from Wikimedia Commons.
+# Public-domain ASL alphabet illustrations (Wikimedia Commons "Sign_language_X.svg"),
+# shipped locally in backend/static/asl/letters and frontend/public/mock/asl/letters.
+# They used to be hotlinked from commons.wikimedia.org, which some networks block.
 # See: https://commons.wikimedia.org/wiki/Category:American_Sign_Language_fingerspelling
-_WIKIMEDIA_BASE = "https://commons.wikimedia.org/wiki/Special:FilePath/"
 
 
 def svg_data_uri(label: str, emoji: str, hue: int = 199) -> str:
@@ -22,10 +23,9 @@ def svg_data_uri(label: str, emoji: str, hue: int = 199) -> str:
 
 def asl_reference_image(char: str) -> str:
     """Return an ASL fingerspelling reference image for a letter or digit."""
-    # Letters A–Z use public-domain Wikimedia Commons illustrations.
+    # Letters A–Z use public-domain illustrations shipped in backend/static.
     if "A" <= char <= "Z":
-        file_name = f"Sign_language_{char}.svg"
-        return _WIKIMEDIA_BASE + urllib.parse.quote(file_name)
+        return f"/mock/asl/letters/{char}.svg"
     # Digits 0–9 use real ASL number reference images shipped in backend/static.
     # 0 is the Gallaudet alphabet zero SVG; 1–9 are public-domain Wikimedia photos.
     if "0" <= char <= "9":

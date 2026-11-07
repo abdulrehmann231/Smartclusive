@@ -65,10 +65,8 @@ function svgDataUri(label: string, emoji: string, hue = 199): string {
 }
 
 function aslReferenceImage(ch: string): string {
-  if (ch >= 'A' && ch <= 'Z') {
-    return 'https://commons.wikimedia.org/wiki/Special:FilePath/' + encodeURIComponent(`Sign_language_${ch}.svg`)
-  }
-  // Number references are shipped in frontend/public/mock/asl/numbers.
+  // Letter and number references are shipped in frontend/public/mock/asl.
+  if (ch >= 'A' && ch <= 'Z') return `/mock/asl/letters/${ch}.svg`
   if (ch >= '0' && ch <= '9') return `/mock/asl/numbers/${ch}.${ch === '0' ? 'svg' : 'jpg'}`
   return svgDataUri(ch, '🤟', (ch.charCodeAt(0) * 17) % 360)
 }
