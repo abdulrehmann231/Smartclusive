@@ -34,7 +34,7 @@ function token() {
   return localStorage.getItem('sc.token') || ''
 }
 
-async function request<T>(method: string, path: string, body?: unknown, signal?: AbortSignal): Promise<T> {
+export async function signRequest<T>(method: string, path: string, body?: unknown, signal?: AbortSignal): Promise<T> {
   const url = `${API_BASE}${path}`
   const headers: Record<string, string> = {
     Authorization: `Bearer ${token()}`,
@@ -84,7 +84,7 @@ class RestSignSession implements SignSession {
     this.pending = controller
     const timeout = window.setTimeout(() => controller.abort(), 8000)
     try {
-      const res = await request<SignProgress>('POST', '/api/sign/frame', {
+      const res = await signRequest<SignProgress>('POST', '/api/sign/frame', {
         sessionId: this.sessionId,
         image: stripDataUrlPrefix(imageDataUrl),
         frameId: this.frameId++,
@@ -100,13 +100,13 @@ class RestSignSession implements SignSession {
   stop(): void {
     this.stopped = true
     this.pending?.abort()
-    request('POST', '/api/sign/stop', { sessionId: this.sessionId }).catch(() => {})
+    signRequest('POST', '/api/sign/stop', { sessionId: this.sessionId }).catch(() => {})
   }
 }
 
 const restSignService = {
   async start(target: string, kind: SignKind): Promise<SignSession> {
-    const res = await request<{ sessionId: string; state: SignProgress }>('POST', '/api/sign/start', {
+    const res = await signRequest<{ sessionId: string; state: SignProgress }>('POST', '/api/sign/start', {
       target,
       kind,
     })

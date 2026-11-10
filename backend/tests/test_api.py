@@ -276,3 +276,24 @@ def test_sign_request_validation(client):
     assert client.post('/api/sign/start', headers=headers, json={'target': '!!!', 'kind': 'word'}).status_code == 400
     result = client.post('/api/sign/frame', headers=headers, json={'sessionId': 'missing', 'image': 'not-base64'})
     assert result.status_code == 400
+
+
+def test_diagnostic_routes_are_authenticated_and_isolated(client, monkeypatch):
+    from smartclusive import diagnostics
+    from test_diagnostics import DiagnosticRecognizer
+    manager = diagnostics.DiagnosticSessions(DiagnosticRecognizer())
+    monkeypatch.setattr(diagnostics, '_manager', manager)
+    assert client.post('/api/sign/test/start').status_code == 401
+    token = _auth(client)
+    headers = {'Authorization': f'Bearer {token}'}
+    sid = client.post('/api/sign/test/start', json={'target': 'S'}, headers=headers).get_json()['sessionId']
+    body = {'sessionId': sid, 'frameId': 0, 'image': base64.b64encode(b'frame').decode()}
+    response = client.post('/api/sign/test/frame', json=body, headers=headers)
+    assert response.status_code == 200
+    assert response.get_json()['candidates'][0]['label'] == 'D'
+    other = {'Authorization': f'Bearer {_auth(client, "other@example.com")}'}
+    assert client.post('/api/sign/test/frame', json=body, headers=other).status_code == 404
+    assert client.post('/api/sign/test/frame', json={**body, 'frameId': True}, headers=headers).status_code == 400
+    assert client.post('/api/sign/test/frame', json={**body, 'image': '%'}, headers=headers).status_code == 400
+    assert client.post('/api/sign/test/stop', json={'sessionId': sid}, headers=headers).status_code == 200
+    assert manager.sessions == {}

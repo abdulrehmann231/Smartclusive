@@ -216,7 +216,7 @@ class ASLRecognizer:
             min_detection_confidence=0.5, min_tracking_confidence=0.5,
         )
 
-    def extract_landmarks(self, image_bytes: bytes, tracker=None) -> Optional[List[float]]:
+    def extract_landmarks(self, image_bytes: bytes, tracker=None, diagnostics=None) -> Optional[List[float]]:
         """Run MediaPipe Hands on a frame and return a normalized 77-D feature vector.
         
         Features (77 total):
@@ -253,6 +253,9 @@ class ASLRecognizer:
             handed = (res.multi_handedness[0].classification[0].label
                       if res.multi_handedness else "Right")
             pts = [[lm.x, lm.y, lm.z] for lm in hand.landmark]
+            if diagnostics is not None:
+                diagnostics.update(landmarks=[point[:] for point in pts],
+                                   handedness=handed)
             if handed == "Left":
                 for point in pts:
                     point[0] = -point[0]

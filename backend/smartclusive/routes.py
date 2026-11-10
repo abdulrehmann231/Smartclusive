@@ -328,3 +328,56 @@ def sign_stop():
     sid = data.get("sessionId")
     get_sign_sessions().stop(sid, owner=student.id)
     return jsonify({"ok": True}), 200
+
+
+# Separate diagnostic sessions never grade quiz answers or accept a target label.
+@api_bp.route("/sign/test/start", methods=["POST"])
+def sign_test_start():
+    from .diagnostics import get_diagnostics
+    student, err = require_student()
+    if err:
+        return jsonify({"error": err[0]}), err[1]
+    try:
+        sid = get_diagnostics().start("A", "letter", owner=student.id)
+        return jsonify({"sessionId": sid})
+    except ValueError as exc:
+        return jsonify({"error": str(exc)}), 429
+
+
+@api_bp.route("/sign/test/frame", methods=["POST"])
+def sign_test_frame():
+    from .diagnostics import get_diagnostics
+    student, err = require_student()
+    if err:
+        return jsonify({"error": err[0]}), err[1]
+    data = request.get_json(silent=True) or {}
+    if not isinstance(data, dict):
+        return jsonify({"error": "invalid_request"}), 400
+    sid, image, frame_id = data.get("sessionId"), data.get("image"), data.get("frameId")
+    if not isinstance(sid, str) or not isinstance(image, str) or len(image) > 1500000:
+        return jsonify({"error": "invalid_image_or_session"}), 400
+    if type(frame_id) is not int or frame_id < 0:
+        return jsonify({"error": "invalid_frame_id"}), 400
+    try:
+        image_bytes = base64.b64decode(image, validate=True)
+    except Exception:
+        return jsonify({"error": "invalid_image"}), 400
+    try:
+        state = get_diagnostics().process_frame(sid, image_bytes, owner=student.id, frame_id=frame_id)
+    except Exception:
+        return jsonify({"error": "processing_failed"}), 500
+    return (jsonify(state), 200) if state is not None else (jsonify({"error": "session_not_found"}), 404)
+
+
+@api_bp.route("/sign/test/stop", methods=["POST"])
+def sign_test_stop():
+    from .diagnostics import get_diagnostics
+    student, err = require_student()
+    if err:
+        return jsonify({"error": err[0]}), err[1]
+    data = request.get_json(silent=True) or {}
+    sid = data.get("sessionId") if isinstance(data, dict) else None
+    if not isinstance(sid, str):
+        return jsonify({"error": "invalid_session"}), 400
+    get_diagnostics().stop(sid, owner=student.id)
+    return jsonify({"ok": True})

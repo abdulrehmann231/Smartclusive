@@ -1,3 +1,4 @@
+import { lazy, Suspense } from 'react'
 import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom'
 import { AuthProvider, RequireAuth, useAuth } from './store/auth'
 import { I18nProvider, useI18n } from './store/i18n'
@@ -13,6 +14,8 @@ import { Videos } from './pages/Videos'
 import { Deck } from './pages/Deck'
 import { Translate } from './pages/Translate'
 import { DEMO_MODE } from './config'
+
+const RecognitionTest = lazy(() => import('./pages/RecognitionTest'))
 
 function Shell({ children }: { children: React.ReactNode }) {
   const { t } = useI18n()
@@ -54,6 +57,7 @@ export default function App() {
             <Route path="/" element={<Home />} />
             <Route path="/learn/cards" element={guard(<Cards />)} />
             <Route path="/learn/capture" element={guard(<Capture />)} />
+            <Route path="/test" element={guard(<Suspense fallback={<p>Loading test page…</p>}><RecognitionTest /></Suspense>)} />
             <Route path="/quiz" element={guard(<Quiz />)} />
             <Route path="/videos" element={guard(<Videos />)} />
             <Route path="/deck" element={guard(<Deck />)} />
